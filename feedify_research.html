@@ -1,0 +1,1777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Feedify Research — Feeding Cities Smarter With Machine Learning</title>
+  <meta name="description" content="IEEE Research Paper 2025 — A perishability-aware AI system connecting food donors to NGOs across 14 Indian cities, achieving 100% allocation efficiency and 41% fairness improvement." />
+  <meta name="keywords" content="food redistribution, AI, machine learning, NGO, food waste, PAPS, perishability index, India" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    /* =========================================
+       TOKENS & RESET
+    ========================================= */
+    :root {
+      --bg:        #070708;
+      --surface:   #0F0F11;
+      --surface2:  #141416;
+      --border:    rgba(255,255,255,0.06);
+      --border-h:  rgba(255,255,255,0.12);
+      --p1:        #7C3AED;
+      --p2:        #06B6D4;
+      --p3:        #10B981;
+      --error:     #EF4444;
+      --warn:      #F59E0B;
+      --text:      #F8F8F8;
+      --text-s:    #9CA3AF;
+      --text-m:    #4B5563;
+      --grad:      linear-gradient(135deg, #7C3AED 0%, #06B6D4 50%, #10B981 100%);
+      --grad-pt:   linear-gradient(135deg, #7C3AED, #06B6D4);
+      --grad-tg:   linear-gradient(135deg, #06B6D4, #10B981);
+      --glow-p:    0 0 40px rgba(124,58,237,0.15);
+      --glow-h:    0 0 60px rgba(124,58,237,0.35);
+      --r-card:    14px;
+      --r-btn:     8px;
+      --r-pill:    50px;
+      --tr:        all 0.3s ease;
+      --section-pad: 120px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; font-size: 16px; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+
+    /* =========================================
+       TYPOGRAPHY
+    ========================================= */
+    .grad-text {
+      background: var(--grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .grad-text-pt {
+      background: var(--grad-pt);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .grad-text-tg {
+      background: var(--grad-tg);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .serif { font-family: Georgia, 'Times New Roman', serif; }
+
+    /* =========================================
+       NAVBAR
+    ========================================= */
+    #navbar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 999;
+      padding: 20px 60px;
+      display: flex; align-items: center; justify-content: space-between;
+      transition: var(--tr);
+    }
+    #navbar.scrolled {
+      background: rgba(7,7,8,0.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-brand {
+      display: flex; align-items: center; gap: 10px;
+      text-decoration: none;
+    }
+    .nav-logo-text {
+      font-size: 20px; font-weight: 800; letter-spacing: -0.5px;
+    }
+    .nav-badge {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+      padding: 3px 10px; border-radius: var(--r-pill);
+      background: rgba(124,58,237,0.15);
+      border: 1px solid rgba(124,58,237,0.4);
+      color: #A78BFA;
+    }
+    .nav-links {
+      display: flex; align-items: center; gap: 4px;
+    }
+    .nav-link {
+      padding: 8px 16px; border-radius: var(--r-btn);
+      font-size: 14px; font-weight: 500; color: var(--text-s);
+      cursor: pointer; border: none; background: none;
+      font-family: 'Inter', sans-serif;
+      transition: var(--tr); text-decoration: none;
+    }
+    .nav-link:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+    .btn-nav-paper {
+      padding: 9px 20px; border-radius: var(--r-btn);
+      font-size: 14px; font-weight: 600;
+      border: 1px solid transparent;
+      background:
+        linear-gradient(var(--surface2), var(--surface2)) padding-box,
+        var(--grad) border-box;
+      color: var(--text);
+      cursor: pointer; font-family: 'Inter', sans-serif;
+      transition: var(--tr);
+      text-decoration: none; display: inline-block;
+    }
+    .btn-nav-paper:hover {
+      background:
+        linear-gradient(rgba(124,58,237,0.12), rgba(124,58,237,0.12)) padding-box,
+        var(--grad) border-box;
+    }
+    @media (max-width: 768px) {
+      #navbar { padding: 16px 24px; }
+      .nav-links .nav-link { display: none; }
+    }
+
+    /* =========================================
+       HERO (Section 2)
+    ========================================= */
+    #hero {
+      position: relative; min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center; padding: 140px 24px 100px;
+      overflow: hidden;
+    }
+
+    /* SVG grid lines background */
+    .grid-bg {
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: radial-gradient(ellipse 80% 70% at 50% 50%, black 30%, transparent 100%);
+    }
+
+    /* Gradient orbs */
+    .orb {
+      position: absolute; border-radius: 50%;
+      filter: blur(80px); pointer-events: none;
+    }
+    .orb-1 {
+      width: 700px; height: 700px;
+      background: radial-gradient(circle, rgba(124,58,237,0.3) 0%, transparent 70%);
+      top: -200px; left: -200px;
+      animation: orbSpin 30s linear infinite;
+    }
+    .orb-2 {
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(6,182,212,0.2) 0%, transparent 70%);
+      bottom: -150px; right: -150px;
+      animation: orbSpin 40s linear infinite reverse;
+    }
+    @keyframes orbSpin {
+      0% { transform: rotate(0deg) translateX(30px); }
+      100% { transform: rotate(360deg) translateX(30px); }
+    }
+
+    .hero-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 20px; border-radius: var(--r-pill); margin-bottom: 32px;
+      font-size: 13px; font-weight: 600; letter-spacing: 0.3px;
+      border: 1px solid transparent;
+      background:
+        linear-gradient(var(--bg), var(--bg)) padding-box,
+        var(--grad) border-box;
+      color: var(--text-s); position: relative; z-index: 1;
+    }
+    .hero-pill::before { content: '◆'; font-size: 10px; }
+    .hero-pill span { color: var(--text); }
+
+    .hero h1 {
+      font-size: clamp(44px, 7vw, 76px);
+      font-weight: 900; letter-spacing: -3px; line-height: 1.0;
+      margin-bottom: 28px; position: relative; z-index: 1;
+      max-width: 860px;
+    }
+    .hero-sub {
+      font-size: clamp(16px, 2vw, 20px);
+      color: var(--text-s); max-width: 700px;
+      margin-bottom: 48px; position: relative; z-index: 1;
+      line-height: 1.7;
+    }
+    .hero-btns {
+      display: flex; gap: 16px; flex-wrap: wrap;
+      justify-content: center; margin-bottom: 60px;
+      position: relative; z-index: 1;
+    }
+    .btn-hero-primary {
+      padding: 14px 32px; border-radius: var(--r-btn);
+      font-size: 15px; font-weight: 700;
+      background: var(--grad-pt);
+      color: #fff; border: none; cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      box-shadow: 0 8px 32px rgba(124,58,237,0.35);
+      transition: var(--tr); text-decoration: none;
+      display: inline-block;
+    }
+    .btn-hero-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(124,58,237,0.5); }
+    .btn-hero-outline {
+      padding: 13px 32px; border-radius: var(--r-btn);
+      font-size: 15px; font-weight: 600;
+      border: 1px solid var(--border-h); color: var(--text);
+      background: rgba(255,255,255,0.04);
+      cursor: pointer; font-family: 'Inter', sans-serif;
+      transition: var(--tr); text-decoration: none; display: inline-block;
+    }
+    .btn-hero-outline:hover { border-color: var(--p1); background: rgba(124,58,237,0.08); }
+
+    /* Stat pills */
+    .stat-pills {
+      display: flex; gap: 12px; flex-wrap: wrap;
+      justify-content: center; position: relative; z-index: 1;
+    }
+    .stat-pill {
+      padding: 10px 20px; border-radius: var(--r-pill);
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border-h);
+      font-size: 14px; font-weight: 700;
+      backdrop-filter: blur(12px);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .stat-pill-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+    }
+
+    /* =========================================
+       SECTIONS GENERAL
+    ========================================= */
+    section {
+      padding: var(--section-pad) 60px;
+      max-width: 1280px; margin: 0 auto;
+    }
+    .section-wrap {
+      padding: var(--section-pad) 0;
+    }
+    .section-inner {
+      max-width: 1280px; margin: 0 auto; padding: 0 60px;
+    }
+    @media (max-width: 768px) {
+      section { padding: 80px 24px; }
+      .section-inner { padding: 0 24px; }
+    }
+
+    .section-eyebrow {
+      font-size: 12px; font-weight: 700; letter-spacing: 2px;
+      text-transform: uppercase; color: var(--p1);
+      margin-bottom: 16px; display: block;
+    }
+    .section-title {
+      font-size: clamp(32px, 4vw, 52px);
+      font-weight: 900; letter-spacing: -1.5px;
+      line-height: 1.1; margin-bottom: 20px;
+    }
+    .section-sub {
+      font-size: 17px; color: var(--text-s);
+      max-width: 640px; line-height: 1.8;
+    }
+    .section-header { margin-bottom: 72px; }
+
+    /* Divider line */
+    .section-divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border-h), transparent);
+      margin: 0;
+    }
+
+    /* =========================================
+       SCROLL ANIMATION
+    ========================================= */
+    .reveal {
+      opacity: 0; transform: translateY(40px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+    .reveal-delay-4 { transition-delay: 0.4s; }
+    .reveal-delay-5 { transition-delay: 0.5s; }
+    .reveal-delay-6 { transition-delay: 0.6s; }
+
+    /* =========================================
+       GLASS CARD
+    ========================================= */
+    .glass {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: var(--r-card);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      transition: var(--tr);
+    }
+    .glass:hover {
+      border-color: var(--border-h);
+      background: rgba(255,255,255,0.05);
+    }
+    .glass-glow:hover {
+      box-shadow: var(--glow-h);
+      border-color: rgba(124,58,237,0.4);
+      transform: translateY(-6px);
+    }
+
+    /* =========================================
+       SECTION 3 — PROBLEM
+    ========================================= */
+    .problem-layout {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 80px;
+      align-items: center;
+    }
+    @media (max-width: 900px) { .problem-layout { grid-template-columns: 1fr; gap: 48px; } }
+
+    .pull-quote {
+      font-family: Georgia, serif;
+      font-size: clamp(22px, 3vw, 34px);
+      line-height: 1.5; color: var(--text);
+      font-style: italic; font-weight: 400;
+      position: relative; padding-left: 32px;
+    }
+    .pull-quote::before {
+      content: '';
+      position: absolute; left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: var(--grad);
+      border-radius: 2px;
+    }
+    .pull-quote-source {
+      font-family: 'Inter', sans-serif;
+      font-size: 13px; color: var(--text-m);
+      font-style: normal; margin-top: 20px;
+      font-weight: 500; letter-spacing: 0.3px;
+    }
+
+    .problem-cards { display: flex; flex-direction: column; gap: 16px; }
+    .problem-card { padding: 24px 28px; }
+    .problem-card-icon { font-size: 24px; margin-bottom: 10px; }
+    .problem-card-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+    .problem-card-desc { font-size: 14px; color: var(--text-s); line-height: 1.7; }
+
+    /* =========================================
+       SECTION 4 — CONTRIBUTIONS
+    ========================================= */
+    .contributions-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+    }
+    @media (max-width: 900px) { .contributions-grid { grid-template-columns: repeat(2,1fr); } }
+    @media (max-width: 600px) { .contributions-grid { grid-template-columns: 1fr; } }
+
+    .contrib-card { padding: 32px 28px; cursor: default; }
+    .contrib-num {
+      font-size: 12px; font-weight: 800; letter-spacing: 1px;
+      color: var(--p1); margin-bottom: 14px; display: block;
+    }
+    .contrib-title { font-size: 17px; font-weight: 700; margin-bottom: 12px; }
+    .contrib-body { font-size: 14px; color: var(--text-s); line-height: 1.8; }
+    .contrib-formula {
+      font-family: 'Courier New', monospace;
+      font-size: 12px; color: var(--p2);
+      background: rgba(6,182,212,0.06);
+      padding: 8px 12px; border-radius: 6px;
+      border: 1px solid rgba(6,182,212,0.15);
+      margin-top: 12px; display: block; word-break: break-all;
+    }
+
+    /* =========================================
+       SECTION 5 — DATASET
+    ========================================= */
+    .dataset-numbers {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+      margin-bottom: 48px;
+    }
+    @media (max-width: 700px) { .dataset-numbers { grid-template-columns: 1fr; } }
+    .dataset-num-card { padding: 48px 32px; text-align: center; }
+    .dataset-big-num {
+      font-size: clamp(44px, 5vw, 64px);
+      font-weight: 900; letter-spacing: -2px;
+      margin-bottom: 10px; display: block;
+    }
+    .dataset-label { font-size: 15px; color: var(--text-s); font-weight: 500; }
+    .dataset-sublabel { font-size: 13px; color: var(--text-m); margin-top: 4px; }
+
+    .city-strip {
+      display: flex; flex-wrap: wrap; gap: 10px;
+      justify-content: center; margin-bottom: 32px;
+    }
+    .city-pill {
+      padding: 7px 18px; border-radius: var(--r-pill);
+      font-size: 13px; font-weight: 600;
+      border: 1px solid transparent;
+      background:
+        linear-gradient(var(--surface2), var(--surface2)) padding-box,
+        var(--grad) border-box;
+      color: var(--text-s);
+    }
+
+    .data-sources {
+      text-align: center; font-size: 13px;
+      color: var(--text-m); line-height: 1.9;
+    }
+    .data-sources strong { color: var(--text-s); }
+
+    /* =========================================
+       SECTION 6 — MODEL RESULTS
+    ========================================= */
+    .results-layout {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 48px;
+      align-items: start;
+    }
+    @media (max-width: 900px) { .results-layout { grid-template-columns: 1fr; } }
+
+    .chart-container {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r-card); padding: 28px; position: relative;
+    }
+    .chart-title {
+      font-size: 14px; font-weight: 700; color: var(--text-s);
+      margin-bottom: 20px; letter-spacing: 0.3px;
+    }
+    .chart-wrapper { position: relative; height: 320px; }
+
+    /* Results table */
+    .results-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .results-table th {
+      padding: 12px 16px; text-align: left;
+      font-size: 11px; font-weight: 700; letter-spacing: 1px;
+      text-transform: uppercase; color: var(--text-m);
+      border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+    }
+    .results-table td {
+      padding: 14px 16px; color: var(--text-s);
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+    }
+    .results-table tr:last-child td { border-bottom: none; }
+    .results-table tr.highlight td {
+      color: var(--text); font-weight: 700;
+    }
+    .results-table tr.highlight td:first-child { color: transparent; }
+    .results-table tr.highlight td:first-child span {
+      background: var(--grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .results-table tr.highlight { background: rgba(124,58,237,0.07); }
+
+    .callout {
+      margin-top: 32px; padding: 20px 24px;
+      background: rgba(124,58,237,0.07);
+      border: 1px solid rgba(124,58,237,0.2);
+      border-radius: 10px;
+      font-size: 15px; color: var(--text-s); line-height: 1.7;
+    }
+    .callout strong { color: var(--text); }
+    .callout-amber {
+      background: rgba(245,158,11,0.07);
+      border-color: rgba(245,158,11,0.25);
+    }
+    .callout-green {
+      background: rgba(16,185,129,0.07);
+      border-color: rgba(16,185,129,0.25);
+    }
+    .callout-label {
+      font-size: 11px; font-weight: 800; letter-spacing: 1.5px;
+      text-transform: uppercase; margin-bottom: 8px; display: block;
+    }
+    .label-purple { color: var(--p1); }
+    .label-amber { color: var(--warn); }
+    .label-green { color: var(--p3); }
+
+    /* =========================================
+       SECTION 8 — FAIRNESS
+    ========================================= */
+    .fairness-layout {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 48px;
+      align-items: start;
+    }
+    @media (max-width: 900px) { .fairness-layout { grid-template-columns: 1fr; } }
+
+    .fairness-stats { display: flex; flex-direction: column; gap: 16px; }
+    .fairness-stat-card { padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; }
+    .fairness-stat-card.green-glow {
+      border-color: rgba(16,185,129,0.3);
+      box-shadow: 0 0 30px rgba(16,185,129,0.1);
+    }
+    .fairness-stat-label { font-size: 13px; color: var(--text-s); margin-bottom: 4px; }
+    .fairness-stat-value { font-size: 22px; font-weight: 800; }
+
+    /* =========================================
+       SECTION 9 — CLUSTERING
+    ========================================= */
+    .clustering-layout {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 48px;
+      align-items: start;
+    }
+    @media (max-width: 900px) { .clustering-layout { grid-template-columns: 1fr; } }
+
+    .cluster-insights { display: flex; flex-direction: column; gap: 16px; padding-top: 8px; }
+    .cluster-metric {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 16px 20px; border-radius: 10px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+    }
+    .cluster-metric-label { font-size: 14px; color: var(--text-s); }
+    .cluster-metric-value { font-size: 18px; font-weight: 800; }
+
+    /* =========================================
+       SECTION 10 — ROUTING
+    ========================================= */
+    .routing-layout {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 28px;
+      margin-bottom: 28px;
+    }
+    @media (max-width: 700px) { .routing-layout { grid-template-columns: 1fr; } }
+    .routing-card { padding: 36px 32px; text-align: center; }
+    .routing-icon { font-size: 40px; margin-bottom: 16px; }
+    .routing-title { font-size: 18px; font-weight: 700; margin-bottom: 12px; }
+    .routing-distance { font-size: 32px; font-weight: 900; letter-spacing: -1px; margin-bottom: 8px; }
+    .routing-desc { font-size: 14px; color: var(--text-s); }
+
+    /* =========================================
+       SECTION 11 — TECH ARCHITECTURE
+    ========================================= */
+    .arch-flow {
+      display: flex; align-items: center; justify-content: center;
+      gap: 0; flex-wrap: wrap; margin-bottom: 48px;
+    }
+    .arch-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-card);
+      padding: 24px 28px; min-width: 180px; text-align: center;
+      position: relative;
+    }
+    .arch-box-icon { font-size: 28px; margin-bottom: 10px; }
+    .arch-box-title { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+    .arch-box-items { font-size: 12px; color: var(--text-m); line-height: 1.8; }
+
+    .arch-arrow {
+      display: flex; align-items: center; padding: 0 8px;
+      position: relative;
+    }
+    .arch-arrow-line {
+      width: 40px; height: 2px;
+      background: linear-gradient(90deg, var(--p1), var(--p2));
+      position: relative;
+      overflow: visible;
+    }
+    .arch-arrow-line::after {
+      content: '▶';
+      position: absolute; right: -8px; top: -7px;
+      font-size: 12px; color: var(--p2);
+    }
+    .arch-arrow-animated::before {
+      content: '';
+      position: absolute; top: 0; left: 0;
+      width: 10px; height: 2px;
+      background: white;
+      animation: flowLine 2s linear infinite;
+    }
+    @keyframes flowLine {
+      0% { transform: translateX(-10px); opacity: 0; }
+      20% { opacity: 1; }
+      80% { opacity: 1; }
+      100% { transform: translateX(40px); opacity: 0; }
+    }
+
+    .tech-badges { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+    .tech-badge {
+      padding: 8px 18px; border-radius: var(--r-pill);
+      font-size: 13px; font-weight: 600; color: var(--text-s);
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border-h);
+      transition: var(--tr);
+    }
+    .tech-badge:hover {
+      color: var(--text);
+      border-color: var(--p1);
+      background: rgba(124,58,237,0.1);
+    }
+
+    @media (max-width: 900px) {
+      .arch-flow { flex-direction: column; }
+      .arch-arrow { transform: rotate(90deg); padding: 8px 0; }
+    }
+
+    /* =========================================
+       SECTION 12 — TEAM
+    ========================================= */
+    .team-grid {
+      display: flex; gap: 28px; justify-content: center;
+      flex-wrap: wrap;
+    }
+    .team-card { padding: 40px 36px; text-align: center; max-width: 300px; width: 100%; }
+    .team-avatar {
+      width: 72px; height: 72px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; font-weight: 900;
+      margin: 0 auto 20px;
+      background: var(--grad);
+      box-shadow: 0 8px 32px rgba(124,58,237,0.3);
+    }
+    .team-name { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+    .team-roles { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 12px 0; }
+    .team-role-tag {
+      font-size: 11px; font-weight: 600; padding: 3px 10px;
+      border-radius: var(--r-pill);
+      background: rgba(124,58,237,0.12);
+      border: 1px solid rgba(124,58,237,0.25);
+      color: #A78BFA;
+    }
+    .team-org { font-size: 13px; color: var(--text-m); margin-top: 8px; }
+
+    /* =========================================
+       FOOTER
+    ========================================= */
+    footer {
+      padding: 80px 60px 48px;
+      text-align: center;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .footer-logo { font-size: 48px; font-weight: 900; letter-spacing: -2px; margin-bottom: 16px; display: block; }
+    .footer-sub { font-size: 16px; color: var(--text-s); margin-bottom: 32px; line-height: 1.7; }
+    .footer-links { display: flex; gap: 28px; justify-content: center; margin-bottom: 40px; flex-wrap: wrap; }
+    .footer-link {
+      font-size: 14px; font-weight: 600; color: var(--text-s);
+      text-decoration: none; transition: var(--tr);
+    }
+    .footer-link:hover { color: var(--text); }
+    .footer-copy { font-size: 13px; color: var(--text-m); }
+
+    /* =========================================
+       COUNT UP UTILITY
+    ========================================= */
+    .count-up { display: inline-block; }
+
+    /* =========================================
+       METRIC HIGHLIGHT BOXES
+    ========================================= */
+    .metric-highlight {
+      display: inline-flex; align-items: baseline; gap: 4px;
+    }
+
+    /* Ablation chart */
+    .ablation-insight { margin-top: 32px; }
+
+    /* Result badge */
+    .result-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 4px 14px; border-radius: var(--r-pill);
+      font-size: 12px; font-weight: 700;
+    }
+    .badge-green { background: rgba(16,185,129,0.12); color: var(--p3); border: 1px solid rgba(16,185,129,0.3); }
+    .badge-teal { background: rgba(6,182,212,0.12); color: var(--p2); border: 1px solid rgba(6,182,212,0.3); }
+    .badge-purple { background: rgba(124,58,237,0.12); color: #A78BFA; border: 1px solid rgba(124,58,237,0.3); }
+
+    /* Section full width wrapper (for bg spans) */
+    .full-bg {
+      background: rgba(255,255,255,0.015);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- =========================================
+     NAVBAR
+========================================= -->
+<nav id="navbar">
+  <a href="#hero" class="nav-brand">
+    <span class="nav-logo-text grad-text-pt">Feedify</span>
+    <span class="nav-badge">Research</span>
+  </a>
+  <div class="nav-links">
+    <a href="#abstract" class="nav-link">Abstract</a>
+    <a href="#methodology" class="nav-link">Methodology</a>
+    <a href="#results" class="nav-link">Results</a>
+    <a href="#graphs" class="nav-link">Graphs</a>
+    <a href="#team" class="nav-link">Team</a>
+    <a href="https://github.com/achintyadwivedi09/AI-Driven-Food-Redistribution-and-Waste-Minimization-System" target="_blank" class="btn-nav-paper">Read Paper ↗</a>
+  </div>
+</nav>
+
+<!-- =========================================
+     SECTION 2 — HERO
+========================================= -->
+<section id="hero" style="max-width:100%;padding:0">
+  <div class="grid-bg"></div>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <div class="hero-pill">
+    <span>IEEE Research Paper</span> · 2025
+  </div>
+
+  <h1>
+    Feeding Cities Smarter<br/>
+    <span class="grad-text">With Machine Learning</span>
+  </h1>
+
+  <p class="hero-sub">
+    A perishability-aware AI system connecting food donors to NGOs across 14 Indian cities — achieving <strong style="color:var(--text)">100% allocation efficiency</strong> and <strong style="color:var(--text)">41% fairness improvement</strong> over baselines.
+  </p>
+
+  <div class="hero-btns">
+    <a href="#results" class="btn-hero-primary">Explore Results ↓</a>
+    <a href="https://github.com/achintyadwivedi09/AI-Driven-Food-Redistribution-and-Waste-Minimization-System" target="_blank" class="btn-hero-outline">View on GitHub ↗</a>
+  </div>
+
+  <div class="stat-pills">
+    <div class="stat-pill">
+      <span class="stat-pill-dot" style="background:var(--p1)"></span>
+      <span class="grad-text-pt" style="font-size:15px">R² = 0.849</span>
+    </div>
+    <div class="stat-pill">
+      <span class="stat-pill-dot" style="background:var(--p3)"></span>
+      <span class="grad-text-tg" style="font-size:15px">0.0 kg Wasted</span>
+    </div>
+    <div class="stat-pill">
+      <span class="stat-pill-dot" style="background:var(--p2)"></span>
+      <span style="color:var(--text)">8,708 Meals Served</span>
+    </div>
+    <div class="stat-pill">
+      <span class="stat-pill-dot" style="background:var(--warn)"></span>
+      <span style="color:var(--text)">Gini: 0.600</span>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- =========================================
+     SECTION 3 — THE PROBLEM
+========================================= -->
+<div id="abstract" class="section-wrap">
+  <section>
+    <div class="section-header reveal">
+      <span class="section-eyebrow">The Problem</span>
+      <h2 class="section-title">A Crisis of Contradiction</h2>
+      <p class="section-sub">India generates 68.7 million tonnes of food waste annually, while 194 million people remain food insecure. The gap between surplus and need is a logistics problem — one that AI can solve.</p>
+    </div>
+    <div class="problem-layout">
+      <div class="reveal">
+        <p class="pull-quote serif">
+          "India wastes 68.7 million tonnes of food annually while 194 million remain food insecure."
+        </p>
+        <p class="pull-quote-source">— FAO Food Waste Report, 2021 &nbsp;·&nbsp; OWID Global Food Security Index</p>
+
+        <div style="margin-top:40px;display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;align-items:center;gap:12px;font-size:14px;color:var(--text-s)">
+            <span style="width:8px;height:8px;border-radius:50%;background:var(--error);flex-shrink:0"></span>
+            Only ~3% of surplus food in India reaches food insecure populations
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;font-size:14px;color:var(--text-s)">
+            <span style="width:8px;height:8px;border-radius:50%;background:var(--warn);flex-shrink:0"></span>
+            Existing redistribution is phone-based, manual, and geography-blind
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;font-size:14px;color:var(--text-s)">
+            <span style="width:8px;height:8px;border-radius:50%;background:var(--p2);flex-shrink:0"></span>
+            Temperature, perishability, and fairness are completely ignored
+          </div>
+        </div>
+      </div>
+      <div class="problem-cards">
+        <div class="problem-card glass reveal reveal-delay-1">
+          <div class="problem-card-icon">⏱️</div>
+          <h3 class="problem-card-title">Reactive Systems</h3>
+          <p class="problem-card-desc">Existing redistribution relies on manual phone coordination and WhatsApp groups. By the time a match is made, perishable food has often expired. No predictive or proactive capability exists.</p>
+        </div>
+        <div class="problem-card glass reveal reveal-delay-2">
+          <div class="problem-card-icon">🗺️</div>
+          <h3 class="problem-card-title">Geography-Blind</h3>
+          <p class="problem-card-desc">No existing platform considers route distance, road conditions, or real-time travel time when matching donors to NGOs. Food travels farther than necessary, wasting time and increasing spoilage risk.</p>
+        </div>
+        <div class="problem-card glass reveal reveal-delay-3">
+          <div class="problem-card-icon">⚖️</div>
+          <h3 class="problem-card-title">Fairness-Unaware</h3>
+          <p class="problem-card-desc">Large, well-connected NGOs consistently receive the majority of donations. Smaller NGOs serving equally vulnerable populations receive nothing. Gini coefficients above 0.9 are common in ad-hoc systems.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="section-divider full-bg">
+<!-- =========================================
+     SECTION 4 — CONTRIBUTIONS / METHODOLOGY
+========================================= -->
+<div id="methodology" class="section-wrap">
+  <section>
+    <div class="section-header reveal" style="text-align:center;max-width:700px;margin:0 auto 72px">
+      <span class="section-eyebrow">Novel Contributions</span>
+      <h2 class="section-title">The Intelligence Behind the System</h2>
+      <p class="section-sub" style="margin:0 auto">Six novel technical contributions distinguishing Feedify from every prior food redistribution system in literature.</p>
+    </div>
+    <div class="contributions-grid">
+      <div class="contrib-card glass glass-glow reveal reveal-delay-1">
+        <span class="contrib-num">NC1</span>
+        <h3 class="contrib-title">Temperature-Aware Perishability Index</h3>
+        <p class="contrib-body">Food decay accelerates non-linearly with ambient heat. Our PI formula integrates real-time temperature data to produce a dynamic perishability score updated hourly.</p>
+        <code class="contrib-formula">PI_final = min(1.0, PI_base + 0.15 × max(0, (T−25)/15))</code>
+      </div>
+      <div class="contrib-card glass glass-glow reveal reveal-delay-2">
+        <span class="contrib-num">NC2</span>
+        <h3 class="contrib-title">Per-NGO Demand Forecasting</h3>
+        <p class="contrib-body">500 individual Random Forest models — one per NGO — predict daily demand using historical intake patterns, calendar features (festivals, weekends), and rolling window statistics.</p>
+        <code class="contrib-formula">RF_ngo_i → ŷ_demand(day) ± σ_confidence</code>
+      </div>
+      <div class="contrib-card glass glass-glow reveal reveal-delay-3">
+        <span class="contrib-num">NC3</span>
+        <h3 class="contrib-title">Weather-Adjusted Expiry Risk</h3>
+        <p class="contrib-body">Open-Meteo Archive API provides real hourly temperature readings across all 14 Indian cities. This drives expiry risk scoring far beyond fixed shelf-life estimates used in prior work.</p>
+        <code class="contrib-formula">ExpRisk(t) = f(T_ambient, humidity, food_category)</code>
+      </div>
+      <div class="contrib-card glass glass-glow reveal reveal-delay-4">
+        <span class="contrib-num">NC4</span>
+        <h3 class="contrib-title">PAPS Allocation Algorithm</h3>
+        <p class="contrib-body">The first allocation score in food redistribution literature that simultaneously optimizes perishability, demand fit, distance, capacity, and time urgency — while monitoring Gini fairness.</p>
+        <code class="contrib-formula">PAPS = 0.35·PI + 0.25·DS + 0.20·Dist + 0.10·Cap + 0.10·TU</code>
+      </div>
+      <div class="contrib-card glass glass-glow reveal reveal-delay-5">
+        <span class="contrib-num">NC5</span>
+        <h3 class="contrib-title">Pareto Multi-Objective Optimization</h3>
+        <p class="contrib-body">Scalarization of three competing objectives — waste minimization, distributional fairness (Gini), and delivery efficiency — into a single tractable optimization problem solved in real time.</p>
+        <code class="contrib-formula">min λ₁·Waste + λ₂·Gini + λ₃·DeliveryTime</code>
+      </div>
+      <div class="contrib-card glass glass-glow reveal reveal-delay-6">
+        <span class="contrib-num">NC6</span>
+        <h3 class="contrib-title">Cold-Chain-Aware Routing</h3>
+        <p class="contrib-body">Delivery route optimization respects each NGO's storage type (Refrigerated / Ambient / Dry). Food requiring cold-chain is matched only to NGOs with appropriate storage, preventing quality loss.</p>
+        <code class="contrib-formula">Route(s) ⊆ {NGOs : storage_type ∈ compatible(food)}</code>
+      </div>
+    </div>
+  </section>
+</div>
+</div>
+
+<!-- =========================================
+     SECTION 5 — DATASET
+========================================= -->
+<div class="section-wrap">
+  <section>
+    <div class="section-header reveal" style="text-align:center;max-width:700px;margin:0 auto 72px">
+      <span class="section-eyebrow">Research Dataset</span>
+      <h2 class="section-title">Built on Real Data</h2>
+      <p class="section-sub" style="margin:0 auto">Our dataset spans five real-world sources, calibrated against ground truth from government NGO registries and global food waste databases.</p>
+    </div>
+    <div class="dataset-numbers">
+      <div class="dataset-num-card glass reveal reveal-delay-1" style="border-color:rgba(124,58,237,0.2)">
+        <span class="dataset-big-num grad-text-pt" id="count-donors">0</span>
+        <div class="dataset-label">Donor Surplus Records</div>
+        <div class="dataset-sublabel">Real-calibrated food events</div>
+      </div>
+      <div class="dataset-num-card glass reveal reveal-delay-2" style="border-color:rgba(6,182,212,0.2)">
+        <span class="dataset-big-num grad-text-tg" id="count-ngos">0</span>
+        <div class="dataset-label">NGO Profiles</div>
+        <div class="dataset-sublabel">NGO Darpan + Akshaya Patra</div>
+      </div>
+      <div class="dataset-num-card glass reveal reveal-delay-3" style="border-color:rgba(16,185,129,0.2)">
+        <span class="dataset-big-num" style="background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text" id="count-weather">0</span>
+        <div class="dataset-label">Weather Readings</div>
+        <div class="dataset-sublabel">Open-Meteo Archive API</div>
+      </div>
+    </div>
+
+    <div class="city-strip reveal">
+      <span class="city-pill">Mumbai</span>
+      <span class="city-pill">Delhi</span>
+      <span class="city-pill">Bangalore</span>
+      <span class="city-pill">Chennai</span>
+      <span class="city-pill">Hyderabad</span>
+      <span class="city-pill">Kolkata</span>
+      <span class="city-pill">Pune</span>
+      <span class="city-pill">Ahmedabad</span>
+      <span class="city-pill">Jaipur</span>
+      <span class="city-pill">Lucknow</span>
+      <span class="city-pill">Surat</span>
+      <span class="city-pill">Kochi</span>
+      <span class="city-pill">Chandigarh</span>
+      <span class="city-pill">Bhopal</span>
+    </div>
+
+    <div class="data-sources reveal">
+      <strong>Data Sources:</strong><br/>
+      Open-Meteo Archive API &nbsp;·&nbsp; NGO Darpan (Government of India) &nbsp;·&nbsp; FAO/OWID Food Waste Dataset 2021<br/>
+      OSRM OpenStreetMap Road Distances &nbsp;·&nbsp; Akshaya Patra Foundation Public Records
+    </div>
+  </section>
+</div>
+
+<div class="section-divider full-bg">
+<!-- =========================================
+     SECTION 6 — MODEL RESULTS
+========================================= -->
+<div id="results" class="section-wrap">
+  <section>
+    <div class="section-header reveal" style="margin-bottom:56px">
+      <span class="section-eyebrow">Experimental Results</span>
+      <h2 class="section-title">Surplus Prediction Results</h2>
+      <p class="section-sub">Comparison of four regression models on the surplus prediction task. All models evaluated on identical 80/20 train-test splits with 5-fold cross-validation.</p>
+    </div>
+    <div class="results-layout">
+      <div class="reveal reveal-delay-1">
+        <div class="chart-container" id="model-chart-container">
+          <div class="chart-title">Model Comparison — R², RMSE, MAE</div>
+          <div class="chart-wrapper">
+            <canvas id="modelChart"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="reveal reveal-delay-2">
+        <div class="table-wrapper" style="overflow:hidden;border-radius:var(--r-card);border:1px solid var(--border)">
+          <table class="results-table">
+            <thead>
+              <tr>
+                <th>Model</th>
+                <th>R²</th>
+                <th>RMSE</th>
+                <th>MAE</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Linear Regression</td>
+                <td>0.412</td>
+                <td>8.14</td>
+                <td>6.23</td>
+              </tr>
+              <tr>
+                <td>Random Forest</td>
+                <td>0.798</td>
+                <td>4.87</td>
+                <td>3.41</td>
+              </tr>
+              <tr>
+                <td>XGBoost</td>
+                <td>0.821</td>
+                <td>4.21</td>
+                <td>3.18</td>
+              </tr>
+              <tr class="highlight">
+                <td><span>Gradient Boosting ✦</span></td>
+                <td>0.849</td>
+                <td>3.92</td>
+                <td>2.92</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout" style="margin-top:20px">
+          <span class="callout-label label-purple">Key Finding</span>
+          <strong>Gradient Boosting achieves R²=0.849</strong>, reducing prediction error by <strong>78%</strong> compared to the Linear Regression baseline. RMSE drops from 8.14 to 3.92, representing a <strong>51.8% improvement</strong> in absolute error.
+        </div>
+        <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
+          <span class="result-badge badge-purple">Best R² = 0.849</span>
+          <span class="result-badge badge-teal">Best RMSE = 3.92</span>
+          <span class="result-badge badge-green">Best MAE = 2.92</span>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+</div>
+
+<!-- =========================================
+     SECTION 7 — ABLATION STUDY
+========================================= -->
+<div id="graphs" class="section-wrap">
+  <section>
+    <div class="section-header reveal" style="margin-bottom:56px">
+      <span class="section-eyebrow">Ablation Study</span>
+      <h2 class="section-title">What Makes the Model Work?</h2>
+      <p class="section-sub">Each feature group was removed independently. RMSE increase (↑ = more error = feature was important) quantifies each group's contribution to predictive accuracy.</p>
+    </div>
+    <div class="results-layout">
+      <div class="reveal reveal-delay-1">
+        <div class="chart-container">
+          <div class="chart-title">RMSE Increase When Feature Group Removed</div>
+          <div class="chart-wrapper">
+            <canvas id="ablationChart"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="reveal reveal-delay-2">
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div style="padding:20px 24px;border-radius:10px;background:rgba(239,68,68,0.07);border:1px solid rgba(239,68,68,0.2)">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <span style="font-size:14px;font-weight:700">Festival / Weekend Flags</span>
+              <span style="font-size:20px;font-weight:900;color:#EF4444">+15.6</span>
+            </div>
+            <div style="font-size:13px;color:var(--text-s)">Most critical feature. Indian festival calendars drive massive demand spikes (Diwali, Eid, weddings) — removing this collapses model accuracy.</div>
+          </div>
+          <div style="padding:20px 24px;border-radius:10px;background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.2)">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <span style="font-size:14px;font-weight:700">Rolling 7-Day Statistics</span>
+              <span style="font-size:20px;font-weight:900;color:#F59E0B">+13.7</span>
+            </div>
+            <div style="font-size:13px;color:var(--text-s)">7-day rolling mean and std capture short-term donation trends and NGO demand rhythms — second most important group.</div>
+          </div>
+          <div style="padding:20px 24px;border-radius:10px;background:rgba(107,114,128,0.07);border:1px solid rgba(107,114,128,0.2)">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <span style="font-size:14px;font-weight:700">Lag Features</span>
+              <span style="font-size:20px;font-weight:900;color:#6B7280">+1.0</span>
+            </div>
+            <div style="font-size:13px;color:var(--text-s)">Previous-day values contribute marginally; rolling stats already capture most temporal autocorrelation.</div>
+          </div>
+          <div style="padding:20px 24px;border-radius:10px;background:rgba(75,85,99,0.07);border:1px solid rgba(75,85,99,0.2)">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <span style="font-size:14px;font-weight:700">Temporal (Month / Quarter)</span>
+              <span style="font-size:20px;font-weight:900;color:#4B5563">−0.1</span>
+            </div>
+            <div style="font-size:13px;color:var(--text-s)">Redundant with rolling features; removing adds negligible error. Safe to exclude in low-memory deployments.</div>
+          </div>
+        </div>
+        <div class="callout ablation-insight" style="margin-top:20px">
+          <span class="callout-label label-amber">Ablation Insight</span>
+          <strong>Festival and rolling window features are the two most critical drivers</strong> of prediction accuracy — removing them increases RMSE by over 15 units (>380% relative increase from baseline RMSE of 3.92).
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="section-divider full-bg">
+<!-- =========================================
+     SECTION 8 — FAIRNESS & ALLOCATION
+========================================= -->
+<div class="section-wrap">
+  <section>
+    <div class="section-header reveal" style="margin-bottom:56px">
+      <span class="section-eyebrow">Allocation Performance</span>
+      <h2 class="section-title">Fair Distribution, Zero Waste</h2>
+      <p class="section-sub">PAPS is benchmarked against three baselines: random assignment, nearest-NGO greedy, and demand-only greedy. Lower Gini = fairer distribution.</p>
+    </div>
+    <div class="fairness-layout">
+      <div class="reveal reveal-delay-1">
+        <div class="chart-container">
+          <div class="chart-title">Gini Coefficient by Allocation Method (↓ Lower = Fairer)</div>
+          <div class="chart-wrapper" style="height:300px">
+            <canvas id="giniChart"></canvas>
+          </div>
+          <div style="margin-top:16px;font-size:13px;color:var(--text-m);text-align:center">
+            Gini = 0 → perfect equality · Gini = 1 → maximum inequality
+          </div>
+        </div>
+      </div>
+      <div class="reveal reveal-delay-2">
+        <div class="fairness-stats">
+          <div class="fairness-stat-card glass">
+            <div>
+              <div class="fairness-stat-label">Total Food Allocated</div>
+              <div class="fairness-stat-value grad-text-pt">3,483.1 kg</div>
+            </div>
+            <span style="font-size:28px">📦</span>
+          </div>
+          <div class="fairness-stat-card glass green-glow" style="background:rgba(16,185,129,0.05)">
+            <div>
+              <div class="fairness-stat-label">Food Wasted</div>
+              <div class="fairness-stat-value" style="color:var(--p3)">0.0 kg</div>
+              <div style="font-size:12px;color:var(--p3);margin-top:2px">100% Utilization Efficiency</div>
+            </div>
+            <span style="font-size:28px">✅</span>
+          </div>
+          <div class="fairness-stat-card glass">
+            <div>
+              <div class="fairness-stat-label">Estimated Meals Served</div>
+              <div class="fairness-stat-value grad-text-tg">8,708</div>
+            </div>
+            <span style="font-size:28px">🥗</span>
+          </div>
+          <div class="fairness-stat-card glass" style="border-color:rgba(124,58,237,0.25)">
+            <div>
+              <div class="fairness-stat-label">Fairness vs. Random Baseline</div>
+              <div class="fairness-stat-value" style="color:#A78BFA">+17.3% improvement</div>
+              <div style="font-size:12px;color:var(--text-m);margin-top:2px">Gini: 0.600 vs. 0.725</div>
+            </div>
+            <span style="font-size:28px">📊</span>
+          </div>
+          <div class="fairness-stat-card glass" style="border-color:rgba(6,182,212,0.25)">
+            <div>
+              <div class="fairness-stat-label">Fairness vs. Demand-Only Baseline</div>
+              <div class="fairness-stat-value grad-text-tg">+40.0% improvement</div>
+              <div style="font-size:12px;color:var(--text-m);margin-top:2px">Gini: 0.600 vs. 0.998</div>
+            </div>
+            <span style="font-size:28px">🏆</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="callout callout-green reveal" style="margin-top:40px;max-width:860px;margin-left:auto;margin-right:auto;text-align:center">
+      <span class="callout-label label-green" style="text-align:center;display:block">Landmark Result</span>
+      <strong>PAPS is the only allocation method to achieve both 100% food utilization AND measurable fairness improvement</strong> — no prior method in the food redistribution literature achieves both objectives simultaneously.
+    </div>
+  </section>
+</div>
+</div>
+
+<!-- =========================================
+     SECTION 9 — CLUSTERING
+========================================= -->
+<div class="section-wrap">
+  <section>
+    <div class="section-header reveal" style="margin-bottom:56px">
+      <span class="section-eyebrow">Donor Segmentation</span>
+      <h2 class="section-title">Understanding Donor Patterns</h2>
+      <p class="section-sub">K-Means clustering (k=8, selected via elbow method and silhouette analysis) reveals distinct donor archetypes across surplus volume and perishability profiles.</p>
+    </div>
+    <div class="clustering-layout">
+      <div class="reveal reveal-delay-1">
+        <div class="chart-container">
+          <div class="chart-title">Donor Clusters — Avg Surplus vs Avg PI Score (bubble size = cluster size)</div>
+          <div class="chart-wrapper" style="height:340px">
+            <canvas id="bubbleChart"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="reveal reveal-delay-2">
+        <div style="margin-bottom:24px">
+          <h3 style="font-size:18px;font-weight:700;margin-bottom:12px">Cluster Analysis Metrics</h3>
+          <div class="cluster-insights">
+            <div class="cluster-metric">
+              <span class="cluster-metric-label">Optimal k (Elbow Method)</span>
+              <span class="cluster-metric-value grad-text-pt">k = 8</span>
+            </div>
+            <div class="cluster-metric">
+              <span class="cluster-metric-label">Silhouette Score</span>
+              <span class="cluster-metric-value" style="color:#A78BFA">0.2804</span>
+            </div>
+            <div class="cluster-metric">
+              <span class="cluster-metric-label">Davies-Bouldin Index</span>
+              <span class="cluster-metric-value grad-text-tg">1.0981</span>
+            </div>
+            <div class="cluster-metric">
+              <span class="cluster-metric-label">Total Donors Segmented</span>
+              <span class="cluster-metric-value" style="color:var(--p3)">50,033</span>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="callout" style="margin-top:0">
+            <span class="callout-label label-purple">Cluster 1 — High Surplus</span>
+            <strong>Wedding and temple donors</strong> form distinct high-surplus, moderate-PI clusters. Average surplus: 78–85 kg per event.
+          </div>
+          <div class="callout callout-amber" style="margin-top:0">
+            <span class="callout-label label-amber">Cluster 5 — High Frequency</span>
+            <strong>Restaurant and café donors</strong> cluster tightly around low-surplus (12–20 kg), high-frequency (daily) patterns with elevated PI scores due to cooked food.
+          </div>
+          <div class="callout callout-green" style="margin-top:0">
+            <span class="callout-label label-green">Cluster 7 — Corporate</span>
+            <strong>Corporate canteens</strong> show predictable, calendar-driven patterns aligned with working days — most forecastable cluster (lowest RMSE per-NGO model).
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="section-divider full-bg">
+<!-- =========================================
+     SECTION 10 — ROUTING
+========================================= -->
+<div class="section-wrap">
+  <section>
+    <div class="section-header reveal" style="margin-bottom:56px">
+      <span class="section-eyebrow">Delivery Routing</span>
+      <h2 class="section-title">Delivering Efficiently</h2>
+      <p class="section-sub">Comparison of Greedy Nearest-Neighbor routing against Two-Opt optimization under Haversine (straight-line) distance metric. Key finding: road network geometry matters.</p>
+    </div>
+    <div class="routing-layout">
+      <div class="routing-card glass reveal reveal-delay-1" style="border-color:rgba(6,182,212,0.2)">
+        <div class="routing-icon">🗺️</div>
+        <div class="routing-title">Greedy Nearest-Neighbor</div>
+        <div class="routing-distance grad-text-pt">4,574.82 km</div>
+        <div style="font-size:13px;color:var(--text-m);margin-bottom:12px">Mean total route distance</div>
+        <div class="routing-desc">Fast, consistent, and simple. Greedy approach achieves competitive routes due to dense city-level clustering. Runtime: O(n²). Suitable for real-time deployment.</div>
+        <div style="margin-top:16px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+          <span class="result-badge badge-green">Wins 84% of runs</span>
+          <span class="result-badge badge-teal">O(n²) Runtime</span>
+        </div>
+      </div>
+      <div class="routing-card glass reveal reveal-delay-2" style="border-color:rgba(124,58,237,0.2)">
+        <div class="routing-icon">🔄</div>
+        <div class="routing-title">Two-Opt Optimization</div>
+        <div class="routing-distance" style="color:#A78BFA">5,248.01 km</div>
+        <div style="font-size:13px;color:var(--text-m);margin-bottom:12px">Mean total route distance</div>
+        <div class="routing-desc">Classical TSP improvement heuristic. Under Haversine straight-line distances, edge-swap improvements are limited — triangle inequality holds too tightly. Wins only 16% of instances.</div>
+        <div style="margin-top:16px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+          <span class="result-badge badge-purple">16% Win Rate</span>
+          <span class="result-badge badge-teal">O(n²) per Pass</span>
+        </div>
+      </div>
+    </div>
+    <div class="callout callout-amber reveal" style="max-width:860px;margin:0 auto">
+      <span class="callout-label label-amber">Honest Limitation & Future Work</span>
+      Two-Opt showed a <strong>16% win rate under Haversine straight-line distances</strong>. Real road network integration via <strong>OSRM (OpenStreetMap Routing Machine)</strong> is strongly recommended for production deployment — actual road distances with turn penalties fundamentally change the optimization landscape and would likely reverse this result. This remains the primary open research direction.
+    </div>
+  </section>
+</div>
+</div>
+
+<!-- =========================================
+     SECTION 11 — TECH ARCHITECTURE
+========================================= -->
+<div class="section-wrap">
+  <section>
+    <div class="section-header reveal" style="text-align:center;max-width:700px;margin:0 auto 72px">
+      <span class="section-eyebrow">System Design</span>
+      <h2 class="section-title">System Architecture</h2>
+      <p class="section-sub" style="margin:0 auto">A four-layer pipeline from raw data ingestion to live allocation dashboard, deployable on any cloud infrastructure.</p>
+    </div>
+
+    <div class="arch-flow reveal">
+      <div class="arch-box">
+        <div class="arch-box-icon">📡</div>
+        <div class="arch-box-title grad-text-pt">Data Layer</div>
+        <div class="arch-box-items">
+          Open-Meteo API<br/>
+          NGO Darpan DB<br/>
+          FAO Food Dataset<br/>
+          Donor Surplus Logs<br/>
+          OSRM Road Data
+        </div>
+      </div>
+      <div class="arch-arrow">
+        <div class="arch-arrow-line arch-arrow-animated"></div>
+      </div>
+      <div class="arch-box">
+        <div class="arch-box-icon">🧠</div>
+        <div class="arch-box-title" style="background:var(--grad-pt);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">ML Pipeline</div>
+        <div class="arch-box-items">
+          Feature Engineering<br/>
+          500× Random Forest<br/>
+          XGBoost / GB Models<br/>
+          PI Score Computation<br/>
+          K-Means Clustering
+        </div>
+      </div>
+      <div class="arch-arrow">
+        <div class="arch-arrow-line arch-arrow-animated" style="animation-delay:0.5s"></div>
+      </div>
+      <div class="arch-box">
+        <div class="arch-box-icon">⚡</div>
+        <div class="arch-box-title grad-text-tg">Allocation Engine</div>
+        <div class="arch-box-items">
+          PAPS Scoring<br/>
+          Pareto Optimizer<br/>
+          Gini Monitoring<br/>
+          Route Optimizer<br/>
+          Cold-Chain Matching
+        </div>
+      </div>
+      <div class="arch-arrow">
+        <div class="arch-arrow-line arch-arrow-animated" style="animation-delay:1s"></div>
+      </div>
+      <div class="arch-box">
+        <div class="arch-box-icon">📊</div>
+        <div class="arch-box-title" style="color:var(--p3)">Dashboard</div>
+        <div class="arch-box-items">
+          Supabase Backend<br/>
+          FastAPI REST Layer<br/>
+          Leaflet.js Maps<br/>
+          Real-time Updates<br/>
+          Donor / NGO Portal
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:56px">
+      <div class="section-eyebrow reveal" style="text-align:center;margin-bottom:24px">Technology Stack</div>
+      <div class="tech-badges reveal">
+        <span class="tech-badge">Python 3.11</span>
+        <span class="tech-badge">scikit-learn</span>
+        <span class="tech-badge">XGBoost</span>
+        <span class="tech-badge">Gradient Boosting</span>
+        <span class="tech-badge">FastAPI</span>
+        <span class="tech-badge">Supabase</span>
+        <span class="tech-badge">React</span>
+        <span class="tech-badge">Tailwind CSS</span>
+        <span class="tech-badge">Chart.js</span>
+        <span class="tech-badge">Leaflet.js</span>
+        <span class="tech-badge">Open-Meteo API</span>
+        <span class="tech-badge">NGO Darpan</span>
+        <span class="tech-badge">OSRM</span>
+        <span class="tech-badge">Pandas / NumPy</span>
+        <span class="tech-badge">Matplotlib</span>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="section-divider full-bg">
+<!-- =========================================
+     SECTION 12 — TEAM
+========================================= -->
+<div id="team" class="section-wrap">
+  <section>
+    <div class="section-header reveal" style="text-align:center;max-width:600px;margin:0 auto 72px">
+      <span class="section-eyebrow">Research Team</span>
+      <h2 class="section-title">The Team</h2>
+      <p class="section-sub" style="margin:0 auto">Built by students and faculty at SRMIST Kattankulathur, Tamil Nadu, India.</p>
+    </div>
+    <div class="team-grid">
+      <div class="team-card glass glass-glow reveal reveal-delay-1">
+        <div class="team-avatar">AD</div>
+        <div class="team-name">Achintya Dwivedi</div>
+        <div class="team-roles">
+          <span class="team-role-tag">ML Pipeline</span>
+          <span class="team-role-tag">Full Stack</span>
+          <span class="team-role-tag">Architecture</span>
+        </div>
+        <div style="font-size:14px;color:var(--text-s);margin-top:4px">Lead Developer & Research Author</div>
+        <div class="team-org">SRMIST Kattankulathur, Chennai</div>
+      </div>
+      <div class="team-card glass glass-glow reveal reveal-delay-2">
+        <div class="team-avatar" style="background:var(--grad-tg)">RP</div>
+        <div class="team-name">S. Rajat Pandey</div>
+        <div class="team-roles">
+          <span class="team-role-tag" style="background:rgba(6,182,212,0.12);border-color:rgba(6,182,212,0.3);color:var(--p2)">Research Design</span>
+          <span class="team-role-tag" style="background:rgba(6,182,212,0.12);border-color:rgba(6,182,212,0.3);color:var(--p2)">Data Analysis</span>
+        </div>
+        <div style="font-size:14px;color:var(--text-s);margin-top:4px">Co-Author & Research Analyst</div>
+        <div class="team-org">SRMIST Kattankulathur, Chennai</div>
+      </div>
+      <div class="team-card glass glass-glow reveal reveal-delay-3">
+        <div class="team-avatar" style="background:linear-gradient(135deg,#10B981,#06B6D4)">PBS</div>
+        <div class="team-name">Dr. P. Balaji Srikaanth</div>
+        <div class="team-roles">
+          <span class="team-role-tag" style="background:rgba(16,185,129,0.12);border-color:rgba(16,185,129,0.3);color:var(--p3)">Faculty Advisor</span>
+          <span class="team-role-tag" style="background:rgba(16,185,129,0.12);border-color:rgba(16,185,129,0.3);color:var(--p3)">Mentor</span>
+        </div>
+        <div style="font-size:14px;color:var(--text-s);margin-top:4px">Assistant Professor, CSE</div>
+        <div class="team-org">SRMIST Kattankulathur, Chennai</div>
+      </div>
+    </div>
+  </section>
+</div>
+</div>
+
+<!-- =========================================
+     FOOTER
+========================================= -->
+<footer>
+  <span class="footer-logo grad-text">Feedify</span>
+  <p class="footer-sub">
+    Reducing food waste with intelligence.<br/>
+    Built at SRMIST Kattankulathur, Tamil Nadu — 2025.
+  </p>
+  <div class="footer-links">
+    <a href="https://github.com/achintyadwivedi09/AI-Driven-Food-Redistribution-and-Waste-Minimization-System" target="_blank" class="footer-link">GitHub ↗</a>
+    <a href="#" class="footer-link">Research Paper</a>
+    <a href="mailto:achintyadwivedi09@gmail.com" class="footer-link">Contact</a>
+    <a href="feedify_app.html" class="footer-link">Live App →</a>
+  </div>
+  <p class="footer-copy">© 2025 Feedify Research Team — SRMIST. All metrics reported are from controlled experiments on the described dataset.</p>
+</footer>
+
+
+<!-- =========================================
+     JAVASCRIPT
+========================================= -->
+<script>
+'use strict';
+
+/* ============================================
+   NAVBAR SCROLL
+============================================ */
+const navbar = document.getElementById('navbar');
+window.addEventListener('scroll', () => {
+  navbar.classList.toggle('scrolled', window.scrollY > 80);
+});
+
+/* ============================================
+   SMOOTH SCROLL for NAV LINKS
+============================================ */
+document.querySelectorAll('a[href^="#"]').forEach(link => {
+  link.addEventListener('click', e => {
+    const target = document.querySelector(link.getAttribute('href'));
+    if (target) {
+      e.preventDefault();
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+});
+
+/* ============================================
+   INTERSECTION OBSERVER — reveal animations
+============================================ */
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.12 });
+
+document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+/* ============================================
+   COUNT-UP ANIMATION
+============================================ */
+function countUp(el, target, suffix = '', decimals = 0) {
+  if (el._counted) return;
+  el._counted = true;
+  const duration = 2000;
+  const step = target / (duration / 16);
+  let current = 0;
+  const fmt = (n) => decimals > 0 ? n.toFixed(decimals) : Math.floor(n).toLocaleString('en-IN');
+  const timer = setInterval(() => {
+    current = Math.min(current + step, target);
+    el.textContent = fmt(current) + suffix;
+    if (current >= target) clearInterval(timer);
+  }, 16);
+}
+
+const countObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (!entry.isIntersecting) return;
+    const el = entry.target;
+    const id = el.id;
+    if (id === 'count-donors') countUp(el, 50033);
+    if (id === 'count-ngos') countUp(el, 500);
+    if (id === 'count-weather') countUp(el, 25578);
+  });
+}, { threshold: 0.3 });
+
+['count-donors','count-ngos','count-weather'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) countObserver.observe(el);
+});
+
+/* ============================================
+   CHART.JS GLOBAL DEFAULTS
+============================================ */
+Chart.defaults.color = '#9CA3AF';
+Chart.defaults.font.family = "'Inter', sans-serif";
+Chart.defaults.font.size = 12;
+
+const chartBg = '#0F0F11';
+const gridColor = 'rgba(255,255,255,0.05)';
+
+/* ============================================
+   CHART 1 — MODEL COMPARISON (Grouped Bar)
+============================================ */
+let modelChartInstance = null;
+
+function createModelChart() {
+  if (modelChartInstance) return;
+  const ctx = document.getElementById('modelChart').getContext('2d');
+
+  const labels = ['Linear\nRegression', 'Random\nForest', 'XGBoost', 'Gradient\nBoosting'];
+
+  // Gradients
+  const gradP = ctx.createLinearGradient(0, 0, 0, 320);
+  gradP.addColorStop(0, 'rgba(124,58,237,0.9)');
+  gradP.addColorStop(1, 'rgba(124,58,237,0.4)');
+
+  const gradT = ctx.createLinearGradient(0, 0, 0, 320);
+  gradT.addColorStop(0, 'rgba(6,182,212,0.9)');
+  gradT.addColorStop(1, 'rgba(6,182,212,0.4)');
+
+  const gradG = ctx.createLinearGradient(0, 0, 0, 320);
+  gradG.addColorStop(0, 'rgba(16,185,129,0.9)');
+  gradG.addColorStop(1, 'rgba(16,185,129,0.4)');
+
+  modelChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Linear Regression', 'Random Forest', 'XGBoost', 'Gradient Boosting'],
+      datasets: [
+        {
+          label: 'R²',
+          data: [0.412, 0.798, 0.821, 0.849],
+          backgroundColor: gradP,
+          borderColor: 'rgba(124,58,237,0.8)',
+          borderWidth: 1,
+          borderRadius: 6,
+        },
+        {
+          label: 'RMSE',
+          data: [8.14, 4.87, 4.21, 3.92],
+          backgroundColor: gradT,
+          borderColor: 'rgba(6,182,212,0.8)',
+          borderWidth: 1,
+          borderRadius: 6,
+        },
+        {
+          label: 'MAE',
+          data: [6.23, 3.41, 3.18, 2.92],
+          backgroundColor: gradG,
+          borderColor: 'rgba(16,185,129,0.8)',
+          borderWidth: 1,
+          borderRadius: 6,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 1200, easing: 'easeOutQuart' },
+      plugins: {
+        legend: {
+          position: 'top',
+          labels: { color: '#9CA3AF', padding: 16, usePointStyle: true, pointStyleWidth: 10 }
+        },
+        tooltip: {
+          backgroundColor: '#141416',
+          borderColor: 'rgba(255,255,255,0.08)',
+          borderWidth: 1,
+          padding: 12,
+          callbacks: {
+            label: (ctx) => ` ${ctx.dataset.label}: ${ctx.parsed.y}`
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: gridColor },
+          ticks: { color: '#9CA3AF', maxRotation: 0 }
+        },
+        y: {
+          grid: { color: gridColor },
+          ticks: { color: '#9CA3AF' },
+          beginAtZero: true
+        }
+      }
+    }
+  });
+}
+
+/* ============================================
+   CHART 2 — ABLATION (Horizontal Bar)
+============================================ */
+let ablationChartInstance = null;
+
+function createAblationChart() {
+  if (ablationChartInstance) return;
+  const ctx = document.getElementById('ablationChart').getContext('2d');
+
+  ablationChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Festival / Weekend Flags', 'Rolling 7-day Stats', 'Lag Features', 'Temporal (Month/Quarter)'],
+      datasets: [{
+        label: 'RMSE Change when Removed',
+        data: [15.6, 13.7, 1.0, -0.1],
+        backgroundColor: ['#EF4444', '#F59E0B', '#6B7280', '#4B5563'],
+        borderRadius: 6,
+        borderWidth: 0,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 1200, easing: 'easeOutQuart' },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#141416',
+          borderColor: 'rgba(255,255,255,0.08)',
+          borderWidth: 1,
+          padding: 12,
+          callbacks: {
+            label: (ctx) => ` RMSE Δ: ${ctx.parsed.x > 0 ? '+' : ''}${ctx.parsed.x}`
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: gridColor },
+          ticks: { color: '#9CA3AF' },
+          title: { display: true, text: 'RMSE Increase (higher = feature more important)', color: '#4B5563' }
+        },
+        y: {
+          grid: { color: 'transparent' },
+          ticks: { color: '#9CA3AF' }
+        }
+      }
+    }
+  });
+}
+
+/* ============================================
+   CHART 3 — GINI DOUGHNUT
+============================================ */
+let giniChartInstance = null;
+
+function createGiniChart() {
+  if (giniChartInstance) return;
+  const ctx = document.getElementById('giniChart').getContext('2d');
+
+  giniChartInstance = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['PAPS (Ours)', 'Random', 'Nearest NGO', 'Demand Only'],
+      datasets: [{
+        data: [0.600, 0.725, 0.763, 0.998],
+        backgroundColor: [
+          'rgba(124,58,237,0.85)',
+          'rgba(6,182,212,0.75)',
+          'rgba(245,158,11,0.75)',
+          'rgba(239,68,68,0.75)'
+        ],
+        borderColor: [
+          'rgba(124,58,237,1)',
+          'rgba(6,182,212,1)',
+          'rgba(245,158,11,1)',
+          'rgba(239,68,68,1)'
+        ],
+        borderWidth: 2,
+        hoverOffset: 8,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '65%',
+      animation: { duration: 1200, easing: 'easeOutQuart', animateRotate: true },
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { color: '#9CA3AF', padding: 14, usePointStyle: true, pointStyleWidth: 10 }
+        },
+        tooltip: {
+          backgroundColor: '#141416',
+          borderColor: 'rgba(255,255,255,0.08)',
+          borderWidth: 1,
+          padding: 12,
+          callbacks: {
+            label: (ctx) => ` Gini: ${ctx.parsed} (${ctx.label})`
+          }
+        }
+      }
+    }
+  });
+}
+
+/* ============================================
+   CHART 4 — BUBBLE CHART (Clusters)
+============================================ */
+let bubbleChartInstance = null;
+
+function createBubbleChart() {
+  if (bubbleChartInstance) return;
+  const ctx = document.getElementById('bubbleChart').getContext('2d');
+
+  // 8 clusters: {x: avg_surplus_kg, y: avg_PI_final, r: relative_size}
+  const clusterData = [
+    { x: 78, y: 0.73, r: 22, label: 'C1: Wedding/Temple' },
+    { x: 15, y: 0.82, r: 30, label: 'C2: Restaurant (Daily)' },
+    { x: 42, y: 0.66, r: 18, label: 'C3: Hotel Banquet' },
+    { x: 28, y: 0.58, r: 24, label: 'C4: College Canteen' },
+    { x: 55, y: 0.71, r: 14, label: 'C5: Corporate Events' },
+    { x: 12, y: 0.88, r: 26, label: 'C6: Street Food / Café' },
+    { x: 85, y: 0.64, r: 10, label: 'C7: Hospital Catering' },
+    { x: 36, y: 0.76, r: 20, label: 'C8: Festival/Mixed' },
+  ];
+
+  const colors = [
+    'rgba(124,58,237,0.75)',
+    'rgba(99,102,241,0.75)',
+    'rgba(59,130,246,0.75)',
+    'rgba(6,182,212,0.75)',
+    'rgba(20,184,166,0.75)',
+    'rgba(16,185,129,0.75)',
+    'rgba(132,204,22,0.75)',
+    'rgba(245,158,11,0.75)',
+  ];
+
+  bubbleChartInstance = new Chart(ctx, {
+    type: 'bubble',
+    data: {
+      datasets: clusterData.map((c, i) => ({
+        label: c.label,
+        data: [{ x: c.x, y: c.y, r: c.r }],
+        backgroundColor: colors[i],
+        borderColor: colors[i].replace('0.75', '1'),
+        borderWidth: 1.5,
+      }))
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 1400, easing: 'easeOutElastic' },
+      plugins: {
+        legend: {
+          position: 'right',
+          labels: { color: '#9CA3AF', padding: 10, boxWidth: 12, font: { size: 11 } }
+        },
+        tooltip: {
+          backgroundColor: '#141416',
+          borderColor: 'rgba(255,255,255,0.08)',
+          borderWidth: 1,
+          padding: 12,
+          callbacks: {
+            label: (ctx) => [
+              ` ${ctx.dataset.label}`,
+              ` Avg Surplus: ${ctx.parsed.x} kg`,
+              ` Avg PI: ${ctx.parsed.y}`,
+            ]
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: gridColor },
+          ticks: { color: '#9CA3AF' },
+          title: { display: true, text: 'Average Surplus (kg)', color: '#4B5563' },
+          min: 0, max: 100
+        },
+        y: {
+          grid: { color: gridColor },
+          ticks: { color: '#9CA3AF' },
+          title: { display: true, text: 'Average PI Score', color: '#4B5563' },
+          min: 0.45, max: 0.95
+        }
+      }
+    }
+  });
+}
+
+/* ============================================
+   CHART OBSERVER — trigger charts on scroll
+============================================ */
+const chartObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (!entry.isIntersecting) return;
+    const id = entry.target.id;
+    if (id === 'modelChart') createModelChart();
+    if (id === 'ablationChart') createAblationChart();
+    if (id === 'giniChart') createGiniChart();
+    if (id === 'bubbleChart') createBubbleChart();
+  });
+}, { threshold: 0.2 });
+
+['modelChart', 'ablationChart', 'giniChart', 'bubbleChart'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) chartObserver.observe(el);
+});
+
+/* ============================================
+   CONSOLE SIGNATURE
+============================================ */
+console.log('%cFeedify Research 📊', 'font-size:22px;font-weight:900;color:#7C3AED;');
+console.log('%cIEEE 2025 · SRMIST Kattankulathur', 'color:#06B6D4;font-size:12px');
+</script>
+
+</body>
+</html>

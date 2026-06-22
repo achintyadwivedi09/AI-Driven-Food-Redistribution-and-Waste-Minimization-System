@@ -1,0 +1,2483 @@
+<!--
+=============================================================
+  FEEDIFY — Smart Food Redistribution Platform
+  Built as a single-file SPA: HTML + CSS + Vanilla JS
+  Supabase backend integration
+=============================================================
+
+  ⚠️  BEFORE RUNNING: Execute this SQL in your Supabase SQL Editor:
+
+  -- Run this in Supabase SQL Editor first:
+  CREATE TABLE donors (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT, type TEXT, city TEXT, address TEXT,
+    contact TEXT, phone TEXT, email TEXT UNIQUE,
+    password_hash TEXT,
+    created_at TIMESTAMPTZ DEFAULT now()
+  );
+  CREATE TABLE ngos (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT, reg_number TEXT, city TEXT, address TEXT,
+    daily_capacity_kg FLOAT, storage_type TEXT,
+    contact TEXT, phone TEXT, email TEXT UNIQUE,
+    password_hash TEXT,
+    created_at TIMESTAMPTZ DEFAULT now()
+  );
+  CREATE TABLE surplus_events (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    donor_id UUID, donor_name TEXT, food_type TEXT,
+    qty_prepared_kg FLOAT, surplus_kg FLOAT,
+    event_type TEXT, event_date DATE, expiry_time TIME,
+    city TEXT, pi_final FLOAT,
+    status TEXT DEFAULT 'pending', notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT now()
+  );
+  CREATE TABLE allocations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    event_id UUID, ngo_id UUID, allocated_kg FLOAT,
+    paps_score FLOAT, meals_served FLOAT, city TEXT,
+    food_type TEXT, donor_city TEXT,
+    allocated_at TIMESTAMPTZ DEFAULT now()
+  );
+
+  -- Enable Row Level Security (optional for public demo):
+  -- ALTER TABLE donors ENABLE ROW LEVEL SECURITY;
+  -- ALTER TABLE ngos ENABLE ROW LEVEL SECURITY;
+  -- ALTER TABLE surplus_events ENABLE ROW LEVEL SECURITY;
+  -- ALTER TABLE allocations ENABLE ROW LEVEL SECURITY;
+
+  -- For demo without RLS, create policies or disable RLS on all tables.
+=============================================================
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Feedify — Don't Waste Food. Feed Someone.</title>
+  <meta name="description" content="Feedify is a smart food redistribution platform connecting food donors with NGOs across 14 Indian cities, powered by AI matching." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    /* =============================================
+       DESIGN TOKENS & RESET
+    ============================================= */
+    :root {
+      --bg: #0A0A0A;
+      --surface: #111111;
+      --surface2: #161616;
+      --border: rgba(255,255,255,0.08);
+      --border-hover: rgba(255,255,255,0.15);
+      --primary: #7C3AED;
+      --primary-light: #9F67FF;
+      --primary-dark: #5B21B6;
+      --secondary: #06B6D4;
+      --secondary-light: #22D3EE;
+      --success: #10B981;
+      --warning: #F59E0B;
+      --error: #EF4444;
+      --text: #FFFFFF;
+      --text-secondary: rgba(255,255,255,0.6);
+      --text-muted: rgba(255,255,255,0.35);
+      --radius-card: 12px;
+      --radius-btn: 8px;
+      --radius-pill: 50px;
+      --glass-bg: rgba(255,255,255,0.04);
+      --glass-border: rgba(255,255,255,0.08);
+      --transition: all 0.25s ease;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+
+    /* =============================================
+       TYPOGRAPHY
+    ============================================= */
+    h1, h2, h3, h4, h5 { font-weight: 700; line-height: 1.2; }
+    .gradient-text {
+      background: linear-gradient(135deg, var(--primary-light), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .gradient-text-alt {
+      background: linear-gradient(135deg, var(--secondary), var(--primary-light));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* =============================================
+       GLASSMORPHISM CARDS
+    ============================================= */
+    .glass-card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-card);
+      transition: var(--transition);
+    }
+    .glass-card:hover {
+      border-color: var(--border-hover);
+      background: rgba(255,255,255,0.06);
+    }
+
+    /* =============================================
+       BUTTONS
+    ============================================= */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: var(--radius-btn);
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: var(--transition);
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: #fff;
+      box-shadow: 0 4px 24px rgba(124,58,237,0.3);
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, var(--primary-light), var(--primary));
+      box-shadow: 0 8px 32px rgba(124,58,237,0.45);
+      transform: translateY(-1px);
+    }
+    .btn-secondary {
+      background: linear-gradient(135deg, var(--secondary), #0891B2);
+      color: #fff;
+      box-shadow: 0 4px 24px rgba(6,182,212,0.25);
+    }
+    .btn-secondary:hover {
+      box-shadow: 0 8px 32px rgba(6,182,212,0.4);
+      transform: translateY(-1px);
+    }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border-hover);
+      color: var(--text);
+      backdrop-filter: blur(8px);
+    }
+    .btn-outline:hover {
+      background: var(--glass-bg);
+      border-color: var(--primary-light);
+      color: var(--primary-light);
+    }
+    .btn-danger {
+      background: linear-gradient(135deg, var(--error), #B91C1C);
+      color: #fff;
+    }
+    .btn-sm { padding: 8px 16px; font-size: 13px; }
+    .btn-lg { padding: 16px 36px; font-size: 16px; border-radius: 10px; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+
+    /* =============================================
+       FORM ELEMENTS
+    ============================================= */
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      letter-spacing: 0.3px;
+    }
+    .form-input, .form-select, .form-textarea {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      transition: var(--transition);
+      outline: none;
+      width: 100%;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      border-color: var(--primary);
+      background: rgba(124,58,237,0.08);
+      box-shadow: 0 0 0 3px rgba(124,58,237,0.15);
+    }
+    .form-select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='rgba(255,255,255,0.5)' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 40px;
+    }
+    .form-select option { background: #1A1A2E; color: #fff; }
+    .form-textarea { resize: vertical; min-height: 90px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+
+    /* =============================================
+       NAVBAR
+    ============================================= */
+    #navbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 1000;
+      padding: 16px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(10,10,10,0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo {
+      font-size: 22px;
+      font-weight: 800;
+      cursor: pointer;
+      letter-spacing: -0.5px;
+    }
+    .nav-links { display: flex; align-items: center; gap: 8px; }
+    .nav-link {
+      padding: 8px 16px;
+      border-radius: var(--radius-btn);
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: var(--transition);
+      border: none;
+      background: none;
+      font-family: 'Inter', sans-serif;
+    }
+    .nav-link:hover { color: var(--text); background: var(--glass-bg); }
+    .nav-link.active { color: var(--text); }
+
+    /* =============================================
+       PAGES (show/hide logic)
+    ============================================= */
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* =============================================
+       PAGE 1 — LANDING
+    ============================================= */
+    #page-landing { min-height: 100vh; }
+
+    /* Animated blobs */
+    .blob-container {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(100px);
+      opacity: 0.25;
+      animation: blobFloat 20s ease-in-out infinite;
+    }
+    .blob-1 {
+      width: 600px; height: 600px;
+      background: var(--primary);
+      top: -200px; left: -100px;
+      animation-delay: 0s;
+    }
+    .blob-2 {
+      width: 500px; height: 500px;
+      background: var(--secondary);
+      top: 30%; right: -150px;
+      animation-delay: -7s;
+    }
+    .blob-3 {
+      width: 400px; height: 400px;
+      background: var(--primary-light);
+      bottom: -100px; left: 30%;
+      animation-delay: -14s;
+    }
+    @keyframes blobFloat {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      25% { transform: translate(40px, -60px) scale(1.05); }
+      50% { transform: translate(-30px, 40px) scale(0.95); }
+      75% { transform: translate(60px, 30px) scale(1.03); }
+    }
+
+    /* Hero */
+    .hero {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 120px 24px 80px;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      border-radius: var(--radius-pill);
+      border: 1px solid rgba(124,58,237,0.4);
+      background: rgba(124,58,237,0.1);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--primary-light);
+      margin-bottom: 28px;
+      letter-spacing: 0.5px;
+    }
+    .hero-badge::before { content: '✦'; }
+    .hero h1 {
+      font-size: clamp(42px, 8vw, 72px);
+      font-weight: 900;
+      letter-spacing: -2px;
+      line-height: 1.05;
+      margin-bottom: 24px;
+      max-width: 900px;
+    }
+    .hero-sub {
+      font-size: 18px;
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin-bottom: 48px;
+      line-height: 1.7;
+    }
+    .hero-ctas { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
+
+    /* Stats */
+    .stats-section {
+      position: relative;
+      z-index: 1;
+      padding: 80px 40px;
+      background: linear-gradient(180deg, transparent, rgba(124,58,237,0.05), transparent);
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    @media (max-width: 768px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+    .stat-card {
+      padding: 32px 24px;
+      text-align: center;
+    }
+    .stat-number {
+      font-size: 42px;
+      font-weight: 900;
+      letter-spacing: -1px;
+      margin-bottom: 8px;
+    }
+    .stat-label { font-size: 14px; color: var(--text-secondary); font-weight: 500; }
+
+    /* How it works */
+    .section {
+      position: relative;
+      z-index: 1;
+      padding: 80px 40px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .section-title {
+      text-align: center;
+      font-size: 36px;
+      font-weight: 800;
+      margin-bottom: 16px;
+      letter-spacing: -0.5px;
+    }
+    .section-sub {
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 16px;
+      margin-bottom: 60px;
+    }
+    .steps-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
+    @media (max-width: 768px) { .steps-grid { grid-template-columns: 1fr; } }
+    .step-card { padding: 40px 32px; text-align: center; position: relative; }
+    .step-number {
+      font-size: 72px;
+      font-weight: 900;
+      opacity: 0.08;
+      position: absolute;
+      top: 20px;
+      right: 24px;
+      line-height: 1;
+    }
+    .step-emoji { font-size: 48px; margin-bottom: 20px; display: block; }
+    .step-title { font-size: 20px; font-weight: 700; margin-bottom: 12px; }
+    .step-desc { font-size: 15px; color: var(--text-secondary); line-height: 1.7; }
+    .steps-connector {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      color: var(--text-muted);
+      padding-top: 40px;
+    }
+
+    /* Testimonials */
+    .testimonials-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    @media (max-width: 768px) { .testimonials-grid { grid-template-columns: 1fr; } }
+    .testimonial-card { padding: 32px; }
+    .testimonial-quote { font-size: 15px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 24px; font-style: italic; }
+    .testimonial-author { display: flex; align-items: center; gap: 12px; }
+    .testimonial-avatar {
+      width: 42px; height: 42px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      font-weight: 700;
+    }
+    .testimonial-name { font-size: 14px; font-weight: 600; }
+    .testimonial-org { font-size: 12px; color: var(--text-muted); }
+    .stars { color: var(--warning); font-size: 14px; margin-bottom: 16px; }
+
+    /* Footer */
+    footer {
+      position: relative;
+      z-index: 1;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 48px 40px 32px;
+      text-align: center;
+    }
+    footer .footer-logo { font-size: 24px; font-weight: 800; margin-bottom: 12px; }
+    footer p { color: var(--text-muted); font-size: 14px; margin-bottom: 8px; }
+    footer a { color: var(--text-secondary); text-decoration: none; transition: var(--transition); }
+    footer a:hover { color: var(--primary-light); }
+    .footer-links { display: flex; gap: 24px; justify-content: center; margin: 16px 0; flex-wrap: wrap; }
+
+    /* =============================================
+       AUTH PAGES (Donor/NGO Login + Register)
+    ============================================= */
+    .auth-page {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 100px 24px 60px;
+    }
+    .auth-container { width: 100%; max-width: 520px; }
+    .auth-header { text-align: center; margin-bottom: 40px; }
+    .auth-header h2 { font-size: 32px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.5px; }
+    .auth-header p { color: var(--text-secondary); font-size: 15px; }
+    .auth-card { padding: 40px; }
+    .auth-tabs {
+      display: flex;
+      background: rgba(255,255,255,0.04);
+      border-radius: 10px;
+      padding: 4px;
+      margin-bottom: 32px;
+      border: 1px solid var(--border);
+    }
+    .auth-tab {
+      flex: 1;
+      padding: 10px;
+      text-align: center;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: var(--transition);
+      color: var(--text-secondary);
+    }
+    .auth-tab.active {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: #fff;
+    }
+    .auth-tab.active-teal {
+      background: linear-gradient(135deg, var(--secondary), #0891B2);
+      color: #fff;
+    }
+    .auth-form { display: none; flex-direction: column; gap: 16px; }
+    .auth-form.active { display: flex; }
+    .auth-form-action {
+      margin-top: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .auth-switch { text-align: center; font-size: 14px; color: var(--text-secondary); }
+    .auth-switch span { color: var(--primary-light); cursor: pointer; font-weight: 600; }
+    .auth-switch span:hover { text-decoration: underline; }
+
+    /* =============================================
+       DASHBOARD LAYOUT
+    ============================================= */
+    .dashboard-page {
+      min-height: 100vh;
+      padding-top: 80px;
+    }
+    .dashboard-header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 24px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 80px;
+      z-index: 100;
+      backdrop-filter: blur(20px);
+    }
+    .dashboard-header-left h2 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .dashboard-header-left p { font-size: 13px; color: var(--text-secondary); }
+    .dashboard-content { padding: 40px; max-width: 1300px; margin: 0 auto; }
+    @media (max-width: 768px) { .dashboard-content { padding: 24px 16px; } }
+
+    .section-card {
+      margin-bottom: 40px;
+    }
+    .section-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+    .section-card-header h3 {
+      font-size: 18px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-card-header h3 span { font-size: 20px; }
+
+    /* Impact cards */
+    .impact-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    @media (max-width: 768px) { .impact-grid { grid-template-columns: 1fr; } }
+    .impact-card { padding: 28px; text-align: center; }
+    .impact-icon { font-size: 32px; margin-bottom: 12px; }
+    .impact-value { font-size: 36px; font-weight: 900; letter-spacing: -1px; margin-bottom: 6px; }
+    .impact-label { font-size: 13px; color: var(--text-secondary); font-weight: 500; }
+
+    /* Surplus form card */
+    .surplus-form-card { padding: 36px; margin-bottom: 40px; }
+    .surplus-form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    @media (max-width: 900px) { .surplus-form-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 600px) { .surplus-form-grid { grid-template-columns: 1fr; } }
+
+    /* Table */
+    .data-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .data-table th {
+      padding: 12px 16px;
+      text-align: left;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+    }
+    .data-table td {
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      color: var(--text-secondary);
+      vertical-align: middle;
+    }
+    .data-table tr:hover td { background: rgba(255,255,255,0.02); }
+    .data-table tr:last-child td { border-bottom: none; }
+    .table-wrapper {
+      background: var(--glass-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      overflow: hidden;
+    }
+    .table-scroll { overflow-x: auto; }
+
+    /* Status pills */
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: var(--radius-pill);
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: capitalize;
+    }
+    .status-pending { background: rgba(245,158,11,0.15); color: var(--warning); border: 1px solid rgba(245,158,11,0.3); }
+    .status-allocated { background: rgba(6,182,212,0.15); color: var(--secondary); border: 1px solid rgba(6,182,212,0.3); }
+    .status-collected { background: rgba(16,185,129,0.15); color: var(--success); border: 1px solid rgba(16,185,129,0.3); }
+    .status-pending::before { content: '●'; }
+    .status-allocated::before { content: '●'; }
+    .status-collected::before { content: '●'; }
+
+    /* Surplus claim cards for NGO */
+    .surplus-cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+    .surplus-item-card { padding: 24px; }
+    .surplus-item-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .surplus-item-type { font-size: 18px; font-weight: 700; }
+    .surplus-paps {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-size: 20px;
+      font-weight: 800;
+    }
+    .surplus-item-meta { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+    .surplus-meta-tag {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      background: rgba(255,255,255,0.05);
+      padding: 5px 10px;
+      border-radius: 6px;
+    }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 60px 24px;
+    }
+    .empty-state-icon { font-size: 56px; margin-bottom: 16px; opacity: 0.6; }
+    .empty-state h4 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+    .empty-state p { font-size: 14px; color: var(--text-secondary); }
+
+    /* =============================================
+       TOAST NOTIFICATIONS
+    ============================================= */
+    #toast-container {
+      position: fixed;
+      top: 100px;
+      right: 24px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      pointer-events: none;
+    }
+    .toast {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 20px;
+      border-radius: 10px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(20px);
+      font-size: 14px;
+      font-weight: 500;
+      max-width: 380px;
+      animation: slideInRight 0.3s ease;
+      pointer-events: all;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+    .toast-success { border-left: 3px solid var(--success); }
+    .toast-error { border-left: 3px solid var(--error); }
+    .toast-info { border-left: 3px solid var(--secondary); }
+    .toast-warning { border-left: 3px solid var(--warning); }
+    .toast-icon { font-size: 18px; }
+    @keyframes slideInRight {
+      from { transform: translateX(120%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes fadeOut {
+      to { opacity: 0; transform: translateX(120%); }
+    }
+
+    /* =============================================
+       ADMIN DASHBOARD
+    ============================================= */
+    .admin-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 40px; }
+    @media (max-width: 768px) { .admin-stats-grid { grid-template-columns: repeat(2, 1fr); } }
+    .admin-stat-card { padding: 28px; }
+    .admin-stat-icon { font-size: 28px; margin-bottom: 12px; }
+    .admin-stat-value { font-size: 32px; font-weight: 900; letter-spacing: -1px; margin-bottom: 4px; }
+    .admin-stat-label { font-size: 13px; color: var(--text-secondary); }
+
+    /* Activity feed */
+    .activity-feed { display: flex; flex-direction: column; gap: 12px; }
+    .activity-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 14px 20px;
+      background: rgba(255,255,255,0.03);
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      font-size: 14px;
+    }
+    .activity-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .activity-dot-pending { background: var(--warning); }
+    .activity-dot-allocated { background: var(--secondary); }
+    .activity-dot-collected { background: var(--success); }
+
+    /* Loading spinner */
+    .spinner {
+      width: 20px; height: 20px;
+      border: 2px solid rgba(255,255,255,0.2);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: inline-block;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Divider */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 32px 0;
+    }
+
+    /* Login modal for admin */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(8px);
+      z-index: 2000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 40px;
+      max-width: 400px;
+      width: 100%;
+      animation: modalIn 0.3s ease;
+    }
+    @keyframes modalIn {
+      from { transform: scale(0.9); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .modal h3 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+    .modal p { color: var(--text-secondary); font-size: 14px; margin-bottom: 24px; }
+
+    /* Scroll fade-in for sections */
+    .fade-in { opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease, transform 0.6s ease; }
+    .fade-in.visible { opacity: 1; transform: translateY(0); }
+
+    /* Responsive navbar */
+    @media (max-width: 600px) {
+      #navbar { padding: 14px 20px; }
+      .nav-links .nav-link:not(.btn) { display: none; }
+    }
+
+    /* Donor type badge */
+    .donor-type-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 10px;
+      border-radius: var(--radius-pill);
+      font-size: 11px;
+      font-weight: 600;
+      background: rgba(124,58,237,0.15);
+      color: var(--primary-light);
+      border: 1px solid rgba(124,58,237,0.3);
+    }
+
+    /* Pills row */
+    .pills-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+    .pill {
+      padding: 4px 12px;
+      border-radius: var(--radius-pill);
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .pill-purple { background: rgba(124,58,237,0.15); color: var(--primary-light); }
+    .pill-teal { background: rgba(6,182,212,0.15); color: var(--secondary-light); }
+    .pill-green { background: rgba(16,185,129,0.15); color: var(--success); }
+
+    /* Progress bar */
+    .progress-bar-container { background: rgba(255,255,255,0.06); border-radius: 50px; height: 6px; overflow: hidden; }
+    .progress-bar-fill { height: 100%; border-radius: 50px; background: linear-gradient(90deg, var(--primary), var(--secondary)); transition: width 0.5s ease; }
+
+    /* Welcome banner */
+    .welcome-banner {
+      background: linear-gradient(135deg, rgba(124,58,237,0.15), rgba(6,182,212,0.1));
+      border: 1px solid rgba(124,58,237,0.2);
+      border-radius: var(--radius-card);
+      padding: 28px 32px;
+      margin-bottom: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .welcome-banner h3 { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+    .welcome-banner p { font-size: 14px; color: var(--text-secondary); }
+
+    /* NGO available surplus header */
+    .live-dot {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--success);
+      background: rgba(16,185,129,0.1);
+      padding: 4px 12px;
+      border-radius: var(--radius-pill);
+      border: 1px solid rgba(16,185,129,0.3);
+    }
+    .live-dot::before {
+      content: '';
+      width: 7px; height: 7px;
+      background: var(--success);
+      border-radius: 50%;
+      animation: pulse 1.5s ease infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.3); }
+    }
+
+    /* City dropdown for NGO dashboard filter */
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    .filter-bar select {
+      padding: 8px 16px;
+      background: var(--glass-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    /* Claimed overlay on card */
+    .card-claimed { position: relative; overflow: hidden; }
+    .card-claimed::after {
+      content: '✓ Claimed';
+      position: absolute;
+      inset: 0;
+      background: rgba(16,185,129,0.15);
+      border-radius: var(--radius-card);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--success);
+    }
+
+    /* Admin login overlay */
+    #admin-login-modal { }
+
+    /* Tooltip */
+    [data-tooltip] { position: relative; }
+    [data-tooltip]::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: calc(100% + 6px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1A1A2E;
+      color: #fff;
+      font-size: 12px;
+      padding: 5px 10px;
+      border-radius: 6px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+      border: 1px solid var(--border);
+    }
+    [data-tooltip]:hover::after { opacity: 1; }
+  </style>
+</head>
+
+<body>
+
+<!-- Toast container -->
+<div id="toast-container"></div>
+
+<!-- Admin login modal -->
+<div id="admin-login-modal" class="modal-overlay">
+  <div class="modal">
+    <h3>🔐 Admin Access</h3>
+    <p>Enter the admin password to access the dashboard.</p>
+    <div class="form-group" style="margin-bottom:20px">
+      <label class="form-label">Password</label>
+      <input type="password" id="admin-pw-input" class="form-input" placeholder="Enter admin password" />
+    </div>
+    <div style="display:flex;gap:12px">
+      <button class="btn btn-primary" style="flex:1" onclick="checkAdminLogin()">Access Dashboard</button>
+      <button class="btn btn-outline" onclick="closeAdminModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Animated background blobs -->
+<div class="blob-container">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+</div>
+
+<!-- =============================================
+     NAVBAR
+============================================= -->
+<nav id="navbar">
+  <div class="nav-logo gradient-text" onclick="showPage('landing')" id="nav-logo">Feedify</div>
+  <div class="nav-links">
+    <button class="nav-link" onclick="scrollToSection('how-it-works')">How It Works</button>
+    <button class="nav-link" onclick="scrollToSection('testimonials-section')">Stories</button>
+    <button class="nav-link btn btn-outline btn-sm" onclick="showPage('donor-auth')" style="margin-left:4px">Login</button>
+    <button class="nav-link btn btn-primary btn-sm" onclick="showPage('donor-auth')" style="margin-left:4px">Register</button>
+  </div>
+</nav>
+
+<!-- =============================================
+     PAGE 1: LANDING
+============================================= -->
+<div id="page-landing" class="page active">
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-badge">AI-Powered Food Redistribution Platform</div>
+    <h1>Don't Waste Food.<br /><span class="gradient-text">Feed Someone.</span></h1>
+    <p class="hero-sub">Join 500+ NGOs and thousands of donors across 14 Indian cities reducing food waste with AI — connecting surplus to need, in real time.</p>
+    <div class="hero-ctas">
+      <button class="btn btn-primary btn-lg" onclick="showPage('donor-auth')">🍱 I Have Surplus Food</button>
+      <button class="btn btn-outline btn-lg" onclick="showPage('ngo-auth')">🤝 We Need Food</button>
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <section class="stats-section fade-in">
+    <div class="stats-grid">
+      <div class="stat-card glass-card">
+        <div class="stat-number gradient-text" data-target="50033" id="stat-1">0</div>
+        <div class="stat-label">🍽️ Total Donations</div>
+      </div>
+      <div class="stat-card glass-card">
+        <div class="stat-number gradient-text-alt" data-target="14" id="stat-2">0</div>
+        <div class="stat-label">🏙️ Cities Active</div>
+      </div>
+      <div class="stat-card glass-card">
+        <div class="stat-number gradient-text" data-target="8708" id="stat-3">0</div>
+        <div class="stat-label">🥗 Meals Served</div>
+      </div>
+      <div class="stat-card glass-card">
+        <div class="stat-number gradient-text-alt" data-target="500" id="stat-4">0</div>
+        <div class="stat-label">🏢 NGO Partners</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <section id="how-it-works" class="section fade-in">
+    <h2 class="section-title">How <span class="gradient-text">Feedify</span> Works</h2>
+    <p class="section-sub">Three simple steps from surplus food to full plates</p>
+    <div class="steps-grid">
+      <div class="step-card glass-card">
+        <div class="step-number gradient-text">1</div>
+        <span class="step-emoji">🍲</span>
+        <h3 class="step-title">Donor Logs Surplus</h3>
+        <p class="step-desc">Restaurants, hotels, and caterers register their surplus food with just a few taps — food type, quantity, and pickup window.</p>
+      </div>
+      <div class="step-card glass-card">
+        <div class="step-number gradient-text">2</div>
+        <span class="step-emoji">🤖</span>
+        <h3 class="step-title">AI Matches to Nearest NGO</h3>
+        <p class="step-desc">Our PAPS algorithm scores each donation and intelligently matches it with the most suitable NGO based on proximity, capacity, and food type.</p>
+      </div>
+      <div class="step-card glass-card">
+        <div class="step-number gradient-text">3</div>
+        <span class="step-emoji">❤️</span>
+        <h3 class="step-title">Food Reaches People</h3>
+        <p class="step-desc">NGOs claim and coordinate pickup. Meals are distributed to those who need them most, tracked end-to-end on the platform.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials -->
+  <section id="testimonials-section" class="section fade-in" style="padding-top:0">
+    <h2 class="section-title">Voices from the <span class="gradient-text">Field</span></h2>
+    <p class="section-sub">Real stories from donors and NGOs using Feedify every day</p>
+    <div class="testimonials-grid">
+      <div class="testimonial-card glass-card">
+        <div class="stars">★★★★★</div>
+        <p class="testimonial-quote">"After every event we used to throw away 80+ kg of food. Now with Feedify, we log the surplus and within 20 minutes an NGO team arrives. It's seamless and deeply satisfying."</p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">T</div>
+          <div>
+            <div class="testimonial-name">Rajesh Nair</div>
+            <div class="testimonial-org">Taj Catering Services, Mumbai</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card glass-card">
+        <div class="stars">★★★★★</div>
+        <p class="testimonial-quote">"Feedify's real-time matching has transformed how we source food. We now serve 200+ additional meals a week purely from donor surplus — at zero cost to our operations."</p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">A</div>
+          <div>
+            <div class="testimonial-name">Sr. Meenakshi Iyer</div>
+            <div class="testimonial-org">Akshaya Patra NGO, Delhi</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card glass-card">
+        <div class="stars">★★★★★</div>
+        <p class="testimonial-quote">"We operate 5 properties in Chennai. Feedify lets each property independently log surplus and track impact. The dashboard is beautiful and our CSR report now has real numbers."</p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">I</div>
+          <div>
+            <div class="testimonial-name">Priya Venkataraman</div>
+            <div class="testimonial-org">ITC Hotels, Chennai</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-logo gradient-text">Feedify</div>
+    <p>Reducing food waste across India, one meal at a time.</p>
+    <div class="footer-links">
+      <a href="#" onclick="showPage('landing')">Home</a>
+      <a href="#" onclick="scrollToSection('how-it-works')">How It Works</a>
+      <a href="#" onclick="showPage('donor-auth')">Donor Login</a>
+      <a href="#" onclick="showPage('ngo-auth')">NGO Login</a>
+      <a href="https://github.com/achintyadwivedi09/AI-Driven-Food-Redistribution-and-Waste-Minimization-System" target="_blank">GitHub</a>
+      <a href="#" onclick="openAdminModal()">Admin</a>
+    </div>
+    <p style="margin-top:24px">© 2025 Feedify — SRMIST Research Project. Built with ❤️ to end food waste.</p>
+  </footer>
+</div>
+
+<!-- =============================================
+     PAGE 2: DONOR AUTH
+============================================= -->
+<div id="page-donor-auth" class="page">
+  <div class="auth-page">
+    <div class="auth-container">
+      <div class="auth-header">
+        <div style="font-size:48px;margin-bottom:16px">🍱</div>
+        <h2>Donor <span class="gradient-text">Portal</span></h2>
+        <p>Register or login to log your food surplus and make an impact</p>
+      </div>
+      <div class="auth-card glass-card">
+        <div class="auth-tabs">
+          <div class="auth-tab active" id="donor-login-tab" onclick="switchDonorTab('login')">Login</div>
+          <div class="auth-tab" id="donor-register-tab" onclick="switchDonorTab('register')">Register</div>
+        </div>
+
+        <!-- Donor Login Form -->
+        <form class="auth-form active" id="donor-login-form" onsubmit="donorLogin(event)">
+          <div class="form-group">
+            <label class="form-label">Email Address</label>
+            <input type="email" id="donor-login-email" class="form-input" placeholder="you@restaurant.com" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input type="password" id="donor-login-pw" class="form-input" placeholder="••••••••" required />
+          </div>
+          <div class="auth-form-action">
+            <button type="submit" class="btn btn-primary" id="donor-login-btn">Login to Dashboard</button>
+            <div class="auth-switch">New donor? <span onclick="switchDonorTab('register')">Register your organization →</span></div>
+          </div>
+        </form>
+
+        <!-- Donor Register Form -->
+        <form class="auth-form" id="donor-register-form" onsubmit="donorRegister(event)">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Organization Name *</label>
+              <input type="text" id="dr-name" class="form-input" placeholder="Hotel Grand etc." required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Organization Type *</label>
+              <select id="dr-type" class="form-select" required>
+                <option value="">Select type...</option>
+                <option>Restaurant</option>
+                <option>Cafe</option>
+                <option>Hotel</option>
+                <option>Wedding Caterer</option>
+                <option>Corporate</option>
+                <option>Temple</option>
+                <option>Hospital</option>
+                <option>College Canteen</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">City *</label>
+              <select id="dr-city" class="form-select" required>
+                <option value="">Select city...</option>
+                <option>Mumbai</option>
+                <option>Delhi</option>
+                <option>Bangalore</option>
+                <option>Chennai</option>
+                <option>Hyderabad</option>
+                <option>Kolkata</option>
+                <option>Pune</option>
+                <option>Ahmedabad</option>
+                <option>Jaipur</option>
+                <option>Lucknow</option>
+                <option>Surat</option>
+                <option>Kochi</option>
+                <option>Chandigarh</option>
+                <option>Bhopal</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Contact Person Name *</label>
+              <input type="text" id="dr-contact" class="form-input" placeholder="Full name" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Address *</label>
+            <textarea id="dr-address" class="form-textarea" placeholder="Full address with landmark..." required style="min-height:72px"></textarea>
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Phone Number *</label>
+              <input type="tel" id="dr-phone" class="form-input" placeholder="+91 98765 43210" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Email Address *</label>
+              <input type="email" id="dr-email" class="form-input" placeholder="you@org.com" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password *</label>
+            <input type="password" id="dr-pw" class="form-input" placeholder="Create a strong password" required minlength="6" />
+          </div>
+          <div class="auth-form-action">
+            <button type="submit" class="btn btn-primary" id="donor-register-btn">Create Donor Account</button>
+            <div class="auth-switch">Already registered? <span onclick="switchDonorTab('login')">Login here →</span></div>
+          </div>
+        </form>
+
+      </div>
+      <div style="text-align:center;margin-top:20px">
+        <button class="btn btn-outline btn-sm" onclick="showPage('landing')">← Back to Home</button>
+        <button class="btn btn-outline btn-sm" onclick="showPage('ngo-auth')" style="margin-left:8px">NGO Portal →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =============================================
+     PAGE 3: NGO AUTH
+============================================= -->
+<div id="page-ngo-auth" class="page">
+  <div class="auth-page">
+    <div class="auth-container">
+      <div class="auth-header">
+        <div style="font-size:48px;margin-bottom:16px">🤝</div>
+        <h2>NGO <span class="gradient-text-alt">Portal</span></h2>
+        <p>Register or login to claim surplus food from donors in your city</p>
+      </div>
+      <div class="auth-card glass-card">
+        <div class="auth-tabs">
+          <div class="auth-tab active-teal" id="ngo-login-tab" onclick="switchNgoTab('login')">Login</div>
+          <div class="auth-tab" id="ngo-register-tab" onclick="switchNgoTab('register')">Register</div>
+        </div>
+
+        <!-- NGO Login Form -->
+        <form class="auth-form active" id="ngo-login-form" onsubmit="ngoLogin(event)">
+          <div class="form-group">
+            <label class="form-label">Email Address</label>
+            <input type="email" id="ngo-login-email" class="form-input" placeholder="contact@ngo.org" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input type="password" id="ngo-login-pw" class="form-input" placeholder="••••••••" required />
+          </div>
+          <div class="auth-form-action">
+            <button type="submit" class="btn btn-secondary" id="ngo-login-btn">Login to Dashboard</button>
+            <div class="auth-switch">New NGO? <span onclick="switchNgoTab('register')">Register your organization →</span></div>
+          </div>
+        </form>
+
+        <!-- NGO Register Form -->
+        <form class="auth-form" id="ngo-register-form" onsubmit="ngoRegister(event)">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">NGO Name *</label>
+              <input type="text" id="nr-name" class="form-input" placeholder="Akshaya Foundation" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Registration Number *</label>
+              <input type="text" id="nr-reg" class="form-input" placeholder="NGO-2024-XXXXXX" required />
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">City *</label>
+              <select id="nr-city" class="form-select" required>
+                <option value="">Select city...</option>
+                <option>Mumbai</option>
+                <option>Delhi</option>
+                <option>Bangalore</option>
+                <option>Chennai</option>
+                <option>Hyderabad</option>
+                <option>Kolkata</option>
+                <option>Pune</option>
+                <option>Ahmedabad</option>
+                <option>Jaipur</option>
+                <option>Lucknow</option>
+                <option>Surat</option>
+                <option>Kochi</option>
+                <option>Chandigarh</option>
+                <option>Bhopal</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Daily Capacity (kg) *</label>
+              <input type="number" id="nr-capacity" class="form-input" placeholder="e.g. 200" min="1" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Address *</label>
+            <textarea id="nr-address" class="form-textarea" placeholder="NGO registered address..." required style="min-height:72px"></textarea>
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Storage Type *</label>
+              <select id="nr-storage" class="form-select" required>
+                <option value="">Select storage...</option>
+                <option>Refrigerated</option>
+                <option>Ambient</option>
+                <option>Dry Storage</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Contact Person *</label>
+              <input type="text" id="nr-contact" class="form-input" placeholder="Full name" required />
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Phone *</label>
+              <input type="tel" id="nr-phone" class="form-input" placeholder="+91 98765 43210" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Email Address *</label>
+              <input type="email" id="nr-email" class="form-input" placeholder="contact@ngo.org" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password *</label>
+            <input type="password" id="nr-pw" class="form-input" placeholder="Create a strong password" required minlength="6" />
+          </div>
+          <div class="auth-form-action">
+            <button type="submit" class="btn btn-secondary" id="ngo-register-btn">Register NGO</button>
+            <div class="auth-switch">Already registered? <span onclick="switchNgoTab('login')">Login here →</span></div>
+          </div>
+        </form>
+
+      </div>
+      <div style="text-align:center;margin-top:20px">
+        <button class="btn btn-outline btn-sm" onclick="showPage('landing')">← Back to Home</button>
+        <button class="btn btn-outline btn-sm" onclick="showPage('donor-auth')" style="margin-left:8px">Donor Portal →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =============================================
+     PAGE 4: DONOR DASHBOARD
+============================================= -->
+<div id="page-donor-dashboard" class="page">
+  <div class="dashboard-page">
+    <div class="dashboard-header">
+      <div class="dashboard-header-left">
+        <h2>🍱 Donor Dashboard</h2>
+        <p id="donor-dash-sub">Welcome back! Log your surplus and track your impact.</p>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <span id="donor-header-badge" class="donor-type-badge"></span>
+        <button class="btn btn-outline btn-sm" onclick="logout()">Logout</button>
+      </div>
+    </div>
+
+    <div class="dashboard-content">
+
+      <!-- Welcome Banner -->
+      <div class="welcome-banner" id="donor-welcome-banner">
+        <div>
+          <h3 id="donor-welcome-name">Welcome back, Donor! 👋</h3>
+          <p>Ready to make an impact today? Log your surplus below.</p>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:13px;color:var(--text-muted);margin-bottom:4px">Member since</div>
+          <div style="font-size:15px;font-weight:600" id="donor-member-since">—</div>
+        </div>
+      </div>
+
+      <!-- Section A: Log Surplus -->
+      <div class="section-card">
+        <div class="section-card-header">
+          <h3><span>✨</span> Log New Surplus</h3>
+          <span class="live-dot">Real-time AI Matching</span>
+        </div>
+        <div class="surplus-form-card glass-card">
+          <form onsubmit="submitSurplus(event)" id="surplus-form">
+            <div class="surplus-form-grid">
+              <div class="form-group">
+                <label class="form-label">Food Type *</label>
+                <select id="sf-food-type" class="form-select" required onchange="updatePIScore()">
+                  <option value="">Select food type...</option>
+                  <option value="Rice">Rice</option>
+                  <option value="Dal">Dal</option>
+                  <option value="Sabzi">Sabzi</option>
+                  <option value="Roti">Roti</option>
+                  <option value="Biryani">Biryani</option>
+                  <option value="Sweets">Sweets</option>
+                  <option value="Salad">Salad</option>
+                  <option value="Mixed">Mixed</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Quantity Prepared (kg) *</label>
+                <input type="number" id="sf-qty-prepared" class="form-input" placeholder="e.g. 50" min="0.5" step="0.5" required oninput="autoSuggestSurplus()" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Estimated Surplus (kg) *</label>
+                <input type="number" id="sf-surplus-kg" class="form-input" placeholder="Auto-suggested" min="0.1" step="0.1" required oninput="updatePIScore()" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Event Type</label>
+                <input type="text" id="sf-event-type" class="form-input" placeholder="Auto-filled from profile" readonly style="opacity:0.7;cursor:default" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Date of Surplus *</label>
+                <input type="date" id="sf-date" class="form-input" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Time Available Until *</label>
+                <input type="time" id="sf-expiry" class="form-input" required />
+              </div>
+            </div>
+            <div class="form-group" style="margin-top:16px">
+              <label class="form-label">Special Notes (optional)</label>
+              <textarea id="sf-notes" class="form-textarea" placeholder="Any dietary info, allergens, packaging details..."></textarea>
+            </div>
+
+            <!-- AI Score Preview -->
+            <div id="pi-score-preview" style="display:none;margin-top:20px;padding:16px 20px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:10px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+                <span style="font-size:14px;font-weight:600;color:var(--primary-light)">🤖 AI Priority Score (PI)</span>
+                <span id="pi-score-value" style="font-size:22px;font-weight:800" class="gradient-text">—</span>
+              </div>
+              <div class="progress-bar-container">
+                <div class="progress-bar-fill" id="pi-progress-bar" style="width:0%"></div>
+              </div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:8px">Higher score = faster matching with nearby NGOs</div>
+            </div>
+
+            <div style="margin-top:24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+              <button type="submit" class="btn btn-primary btn-lg" id="surplus-submit-btn">
+                🚀 Submit Surplus for AI Matching
+              </button>
+              <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('surplus-form').reset();document.getElementById('pi-score-preview').style.display='none';">Reset Form</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Section B: Impact Stats -->
+      <div class="section-card">
+        <div class="section-card-header">
+          <h3><span>🌟</span> My Impact</h3>
+        </div>
+        <div class="impact-grid">
+          <div class="impact-card glass-card">
+            <div class="impact-icon">⚖️</div>
+            <div class="impact-value gradient-text" id="donor-total-kg">0</div>
+            <div class="impact-label">Total kg Donated</div>
+          </div>
+          <div class="impact-card glass-card">
+            <div class="impact-icon">🥗</div>
+            <div class="impact-value gradient-text-alt" id="donor-total-meals">0</div>
+            <div class="impact-label">Meals Generated</div>
+          </div>
+          <div class="impact-card glass-card">
+            <div class="impact-icon">📦</div>
+            <div class="impact-value gradient-text" id="donor-total-events">0</div>
+            <div class="impact-label">Total Events</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section C: Donation History -->
+      <div class="section-card">
+        <div class="section-card-header">
+          <h3><span>📋</span> My Donation History</h3>
+          <button class="btn btn-outline btn-sm" onclick="loadDonorHistory()">↻ Refresh</button>
+        </div>
+        <div id="donor-history-container">
+          <div class="empty-state">
+            <div class="empty-state-icon">📭</div>
+            <h4>Loading donations...</h4>
+            <p>Please wait</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- =============================================
+     PAGE 5: NGO DASHBOARD
+============================================= -->
+<div id="page-ngo-dashboard" class="page">
+  <div class="dashboard-page">
+    <div class="dashboard-header">
+      <div class="dashboard-header-left">
+        <h2>🤝 NGO Dashboard</h2>
+        <p id="ngo-dash-sub">Claim surplus food from donors in your city.</p>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="font-size:13px;color:var(--text-secondary)" id="ngo-city-badge"></span>
+        <button class="btn btn-outline btn-sm" onclick="logout()">Logout</button>
+      </div>
+    </div>
+
+    <div class="dashboard-content">
+
+      <!-- Welcome Banner -->
+      <div class="welcome-banner" style="background:linear-gradient(135deg,rgba(6,182,212,0.12),rgba(16,185,129,0.08));border-color:rgba(6,182,212,0.2)">
+        <div>
+          <h3 id="ngo-welcome-name">Welcome, NGO! 🤝</h3>
+          <p>Browse and claim available surplus food near you.</p>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:13px;color:var(--text-muted);margin-bottom:4px">Storage Type</div>
+          <div style="font-size:15px;font-weight:600" id="ngo-storage-type">—</div>
+        </div>
+      </div>
+
+      <!-- Section A: Available Surplus -->
+      <div class="section-card">
+        <div class="section-card-header">
+          <h3><span>🔍</span> Available Surplus Near Me</h3>
+          <div style="display:flex;gap:10px;align-items:center">
+            <span class="live-dot">Live</span>
+            <button class="btn btn-outline btn-sm" onclick="loadAvailableSurplus()">↻ Refresh</button>
+          </div>
+        </div>
+        <div id="ngo-surplus-container">
+          <div class="empty-state">
+            <div class="empty-state-icon">🔄</div>
+            <h4>Loading available surplus...</h4>
+            <p>Please wait</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section B: Impact Stats -->
+      <div class="section-card">
+        <div class="section-card-header">
+          <h3><span>🌟</span> My Impact</h3>
+        </div>
+        <div class="impact-grid">
+          <div class="impact-card glass-card">
+            <div class="impact-icon">⚖️</div>
+            <div class="impact-value gradient-text-alt" id="ngo-total-kg">0</div>
+            <div class="impact-label">Total kg Received</div>
+          </div>
+          <div class="impact-card glass-card">
+            <div class="impact-icon">🥗</div>
+            <div class="impact-value gradient-text" id="ngo-total-meals">0</div>
+            <div class="impact-label">Meals Served</div>
+          </div>
+          <div class="impact-card glass-card">
+            <div class="impact-icon">📦</div>
+            <div class="impact-value gradient-text-alt" id="ngo-total-collections">0</div>
+            <div class="impact-label">Total Collections</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section C: Allocation History -->
+      <div class="section-card">
+        <div class="section-card-header">
+          <h3><span>📋</span> My Allocation History</h3>
+          <button class="btn btn-outline btn-sm" onclick="loadNGOHistory()">↻ Refresh</button>
+        </div>
+        <div id="ngo-history-container">
+          <div class="empty-state">
+            <div class="empty-state-icon">📭</div>
+            <h4>Loading history...</h4>
+            <p>Please wait</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- =============================================
+     PAGE 6: ADMIN DASHBOARD
+============================================= -->
+<div id="page-admin-dashboard" class="page">
+  <div class="dashboard-page">
+    <div class="dashboard-header">
+      <div class="dashboard-header-left">
+        <h2>🔐 Admin Dashboard</h2>
+        <p>Platform overview — live data from Supabase</p>
+      </div>
+      <div style="display:flex;gap:12px">
+        <button class="btn btn-outline btn-sm" onclick="loadAdminData()">↻ Refresh All</button>
+        <button class="btn btn-outline btn-sm" onclick="logout()">Exit Admin</button>
+      </div>
+    </div>
+
+    <div class="dashboard-content">
+      <!-- Stat cards -->
+      <div class="admin-stats-grid">
+        <div class="admin-stat-card glass-card">
+          <div class="admin-stat-icon">🍱</div>
+          <div class="admin-stat-value gradient-text" id="admin-total-donors">—</div>
+          <div class="admin-stat-label">Total Donors</div>
+        </div>
+        <div class="admin-stat-card glass-card">
+          <div class="admin-stat-icon">🤝</div>
+          <div class="admin-stat-value gradient-text-alt" id="admin-total-ngos">—</div>
+          <div class="admin-stat-label">Total NGOs</div>
+        </div>
+        <div class="admin-stat-card glass-card">
+          <div class="admin-stat-icon">📦</div>
+          <div class="admin-stat-value gradient-text" id="admin-total-events">—</div>
+          <div class="admin-stat-label">Surplus Events</div>
+        </div>
+        <div class="admin-stat-card glass-card">
+          <div class="admin-stat-icon">✅</div>
+          <div class="admin-stat-value gradient-text-alt" id="admin-total-alloc">—</div>
+          <div class="admin-stat-label">Allocations</div>
+        </div>
+        <div class="admin-stat-card glass-card">
+          <div class="admin-stat-icon">⚖️</div>
+          <div class="admin-stat-value gradient-text" id="admin-total-kg">—</div>
+          <div class="admin-stat-label">Total kg Saved</div>
+        </div>
+        <div class="admin-stat-card glass-card">
+          <div class="admin-stat-icon">🥗</div>
+          <div class="admin-stat-value gradient-text-alt" id="admin-total-meals">—</div>
+          <div class="admin-stat-label">Total Meals</div>
+        </div>
+      </div>
+
+      <!-- City breakdown -->
+      <div class="section-card">
+        <div class="section-card-header">
+          <h3><span>🏙️</span> City-wise Breakdown</h3>
+        </div>
+        <div class="table-wrapper">
+          <div class="table-scroll">
+            <table class="data-table" id="admin-city-table">
+              <thead>
+                <tr>
+                  <th>City</th>
+                  <th>Donors</th>
+                  <th>NGOs</th>
+                  <th>Events</th>
+                  <th>kg Saved</th>
+                </tr>
+              </thead>
+              <tbody id="admin-city-tbody">
+                <tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted)">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent activity -->
+      <div class="section-card">
+        <div class="section-card-header">
+          <h3><span>⚡</span> Recent Activity</h3>
+          <span style="font-size:13px;color:var(--text-muted)">Last 10 surplus events</span>
+        </div>
+        <div id="admin-activity-feed">
+          <div class="empty-state">
+            <div class="empty-state-icon">🔄</div>
+            <h4>Loading activity...</h4>
+          </div>
+        </div>
+      </div>
+
+      <!-- All surplus table -->
+      <div class="section-card">
+        <div class="section-card-header">
+          <h3><span>📋</span> All Surplus Events</h3>
+        </div>
+        <div class="table-wrapper">
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Food Type</th>
+                  <th>City</th>
+                  <th>Surplus kg</th>
+                  <th>PI Score</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="admin-events-tbody">
+                <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted)">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<!-- =============================================
+     JAVASCRIPT
+============================================= -->
+<script>
+'use strict';
+
+// ==============================================
+// SUPABASE CONFIG — Replace with your credentials
+// ==============================================
+const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ==============================================
+// APP STATE
+// ==============================================
+let currentUser = null;     // { type: 'donor'|'ngo'|'admin', data: {...} }
+const CITIES = ['Mumbai','Delhi','Bangalore','Chennai','Hyderabad','Kolkata','Pune','Ahmedabad','Jaipur','Lucknow','Surat','Kochi','Chandigarh','Bhopal'];
+
+// PI base scores by food type
+const PI_BASE = {
+  Rice: 0.70, Dal: 0.65, Sabzi: 0.72, Roti: 0.60,
+  Biryani: 0.80, Sweets: 0.55, Salad: 0.50, Mixed: 0.68
+};
+
+// ==============================================
+// INIT
+// ==============================================
+document.addEventListener('DOMContentLoaded', () => {
+  initApp();
+  initScrollAnimations();
+  setDefaultFormDate();
+});
+
+function initApp() {
+  const saved = localStorage.getItem('feedify_user');
+  if (saved) {
+    try {
+      currentUser = JSON.parse(saved);
+      if (currentUser.type === 'donor') {
+        populateDonorDashboard();
+        showPage('donor-dashboard');
+      } else if (currentUser.type === 'ngo') {
+        populateNGODashboard();
+        showPage('ngo-dashboard');
+      } else if (currentUser.type === 'admin') {
+        loadAdminData();
+        showPage('admin-dashboard');
+      }
+    } catch(e) { localStorage.removeItem('feedify_user'); }
+  }
+}
+
+function setDefaultFormDate() {
+  const today = new Date().toISOString().split('T')[0];
+  const dateEl = document.getElementById('sf-date');
+  if (dateEl) dateEl.value = today;
+}
+
+// ==============================================
+// PAGE NAVIGATION
+// ==============================================
+function showPage(pageId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const target = document.getElementById(`page-${pageId}`);
+  if (target) {
+    target.classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  updateNavbar(pageId);
+}
+
+function updateNavbar(pageId) {
+  const isDashboard = pageId.includes('dashboard');
+  document.getElementById('navbar').style.display = isDashboard ? 'none' : 'flex';
+}
+
+function scrollToSection(id) {
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ==============================================
+// AUTH TABS
+// ==============================================
+function switchDonorTab(tab) {
+  const loginTab = document.getElementById('donor-login-tab');
+  const regTab = document.getElementById('donor-register-tab');
+  const loginForm = document.getElementById('donor-login-form');
+  const regForm = document.getElementById('donor-register-form');
+
+  if (tab === 'login') {
+    loginTab.classList.add('active'); regTab.classList.remove('active');
+    loginForm.classList.add('active'); regForm.classList.remove('active');
+  } else {
+    regTab.classList.add('active'); loginTab.classList.remove('active');
+    regForm.classList.add('active'); loginForm.classList.remove('active');
+  }
+}
+
+function switchNgoTab(tab) {
+  const loginTab = document.getElementById('ngo-login-tab');
+  const regTab = document.getElementById('ngo-register-tab');
+  const loginForm = document.getElementById('ngo-login-form');
+  const regForm = document.getElementById('ngo-register-form');
+
+  if (tab === 'login') {
+    loginTab.classList.add('active-teal'); regTab.classList.remove('active-teal');
+    loginForm.classList.add('active'); regForm.classList.remove('active');
+  } else {
+    regTab.classList.add('active-teal'); loginTab.classList.remove('active-teal');
+    regForm.classList.add('active'); loginForm.classList.remove('active');
+  }
+}
+
+// ==============================================
+// DONOR AUTH
+// ==============================================
+async function donorRegister(e) {
+  e.preventDefault();
+  const btn = document.getElementById('donor-register-btn');
+  setLoading(btn, true);
+
+  const payload = {
+    name: v('dr-name'), type: v('dr-type'), city: v('dr-city'),
+    address: v('dr-address'), contact: v('dr-contact'),
+    phone: v('dr-phone'), email: v('dr-email'),
+    password_hash: btoa(v('dr-pw'))   // simple encoding for demo; use Supabase Auth in prod
+  };
+
+  try {
+    // Check for duplicate email
+    const { data: existing } = await supabase.from('donors').select('id').eq('email', payload.email).maybeSingle();
+    if (existing) { showToast('This email is already registered as a donor.', 'error'); setLoading(btn, false); return; }
+
+    const { data, error } = await supabase.from('donors').insert(payload).select().single();
+    if (error) throw error;
+
+    currentUser = { type: 'donor', data };
+    saveSession();
+    showToast('Welcome to Feedify! Your donor account is ready. 🎉', 'success');
+    populateDonorDashboard();
+    showPage('donor-dashboard');
+  } catch (err) {
+    showToast('Registration failed: ' + (err.message || 'Unknown error'), 'error');
+  }
+  setLoading(btn, false);
+}
+
+async function donorLogin(e) {
+  e.preventDefault();
+  const btn = document.getElementById('donor-login-btn');
+  setLoading(btn, true);
+
+  const email = v('donor-login-email');
+  const pw = v('donor-login-pw');
+
+  try {
+    const { data, error } = await supabase.from('donors')
+      .select('*').eq('email', email).eq('password_hash', btoa(pw)).maybeSingle();
+    if (error) throw error;
+    if (!data) { showToast('Invalid email or password.', 'error'); setLoading(btn, false); return; }
+
+    currentUser = { type: 'donor', data };
+    saveSession();
+    showToast(`Welcome back, ${data.name}! 👋`, 'success');
+    populateDonorDashboard();
+    showPage('donor-dashboard');
+  } catch (err) {
+    showToast('Login failed: ' + (err.message || 'Unknown error'), 'error');
+  }
+  setLoading(btn, false);
+}
+
+// ==============================================
+// NGO AUTH
+// ==============================================
+async function ngoRegister(e) {
+  e.preventDefault();
+  const btn = document.getElementById('ngo-register-btn');
+  setLoading(btn, true);
+
+  const payload = {
+    name: v('nr-name'), reg_number: v('nr-reg'), city: v('nr-city'),
+    address: v('nr-address'), daily_capacity_kg: parseFloat(v('nr-capacity')),
+    storage_type: v('nr-storage'), contact: v('nr-contact'),
+    phone: v('nr-phone'), email: v('nr-email'),
+    password_hash: btoa(v('nr-pw'))
+  };
+
+  try {
+    const { data: existing } = await supabase.from('ngos').select('id').eq('email', payload.email).maybeSingle();
+    if (existing) { showToast('This email is already registered as an NGO.', 'error'); setLoading(btn, false); return; }
+
+    const { data, error } = await supabase.from('ngos').insert(payload).select().single();
+    if (error) throw error;
+
+    currentUser = { type: 'ngo', data };
+    saveSession();
+    showToast('NGO registered successfully! Welcome to Feedify! 🌟', 'success');
+    populateNGODashboard();
+    showPage('ngo-dashboard');
+  } catch (err) {
+    showToast('Registration failed: ' + (err.message || 'Unknown error'), 'error');
+  }
+  setLoading(btn, false);
+}
+
+async function ngoLogin(e) {
+  e.preventDefault();
+  const btn = document.getElementById('ngo-login-btn');
+  setLoading(btn, true);
+
+  const email = v('ngo-login-email');
+  const pw = v('ngo-login-pw');
+
+  try {
+    const { data, error } = await supabase.from('ngos')
+      .select('*').eq('email', email).eq('password_hash', btoa(pw)).maybeSingle();
+    if (error) throw error;
+    if (!data) { showToast('Invalid email or password.', 'error'); setLoading(btn, false); return; }
+
+    currentUser = { type: 'ngo', data };
+    saveSession();
+    showToast(`Welcome, ${data.name}! 🤝`, 'success');
+    populateNGODashboard();
+    showPage('ngo-dashboard');
+  } catch (err) {
+    showToast('Login failed: ' + (err.message || 'Unknown error'), 'error');
+  }
+  setLoading(btn, false);
+}
+
+// ==============================================
+// LOGOUT
+// ==============================================
+function logout() {
+  currentUser = null;
+  localStorage.removeItem('feedify_user');
+  showToast('Logged out successfully.', 'info');
+  showPage('landing');
+}
+
+function saveSession() {
+  localStorage.setItem('feedify_user', JSON.stringify(currentUser));
+}
+
+// ==============================================
+// DONOR DASHBOARD
+// ==============================================
+function populateDonorDashboard() {
+  if (!currentUser || currentUser.type !== 'donor') return;
+  const d = currentUser.data;
+  document.getElementById('donor-welcome-name').textContent = `Welcome back, ${d.name}! 👋`;
+  document.getElementById('donor-dash-sub').textContent = `${d.type} · ${d.city}`;
+  document.getElementById('donor-header-badge').textContent = d.type;
+  document.getElementById('sf-event-type').value = d.type;
+  document.getElementById('donor-member-since').textContent = formatDate(d.created_at);
+  setDefaultFormDate();
+  loadDonorHistory();
+}
+
+async function loadDonorHistory() {
+  if (!currentUser || currentUser.type !== 'donor') return;
+  const container = document.getElementById('donor-history-container');
+  container.innerHTML = '<div class="empty-state"><div class="spinner"></div><p style="margin-top:16px;color:var(--text-muted)">Fetching donations...</p></div>';
+
+  try {
+    const { data, error } = await supabase
+      .from('surplus_events')
+      .select('*')
+      .eq('donor_id', currentUser.data.id)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+
+    // Update impact stats
+    const totalKg = data.reduce((s, r) => s + (r.surplus_kg || 0), 0);
+    const totalMeals = Math.round(totalKg * 2.5);
+    document.getElementById('donor-total-kg').textContent = totalKg.toFixed(1);
+    document.getElementById('donor-total-meals').textContent = totalMeals;
+    document.getElementById('donor-total-events').textContent = data.length;
+
+    if (data.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">🍽️</div>
+          <h4>No donations yet</h4>
+          <p>Log your first surplus above and make an impact today!</p>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = `
+      <div class="table-wrapper">
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Food Type</th>
+                <th>Prepared (kg)</th>
+                <th>Surplus (kg)</th>
+                <th>Meals Generated</th>
+                <th>PI Score</th>
+                <th>Status</th>
+                <th>NGO Matched</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${data.map(row => `
+                <tr>
+                  <td>${formatDate(row.event_date || row.created_at)}</td>
+                  <td><span class="pill pill-purple">${row.food_type}</span></td>
+                  <td>${row.qty_prepared_kg || '—'}</td>
+                  <td>${row.surplus_kg}</td>
+                  <td>${Math.round((row.surplus_kg || 0) * 2.5)}</td>
+                  <td><span class="gradient-text" style="font-weight:700">${row.pi_final ? row.pi_final.toFixed(3) : '—'}</span></td>
+                  <td><span class="status-pill status-${row.status}">${row.status}</span></td>
+                  <td>${row.status === 'allocated' || row.status === 'collected' ? `<span class="pill pill-teal">Donor in ${row.city}</span>` : '—'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+  } catch (err) {
+    container.innerHTML = `<div class="empty-state"><p style="color:var(--error)">Error: ${err.message}</p></div>`;
+  }
+}
+
+// ==============================================
+// SURPLUS FORM LOGIC
+// ==============================================
+function autoSuggestSurplus() {
+  const qty = parseFloat(v('sf-qty-prepared'));
+  if (!isNaN(qty) && qty > 0) {
+    document.getElementById('sf-surplus-kg').value = (qty * 0.30).toFixed(1);
+    updatePIScore();
+  }
+}
+
+function updatePIScore() {
+  const foodType = v('sf-food-type');
+  const surplusKg = parseFloat(v('sf-surplus-kg'));
+  if (!foodType || isNaN(surplusKg)) return;
+
+  const PIbase = PI_BASE[foodType] || 0.65;
+  const temp = 28; // assume current temp
+  const PITemp = Math.min(1.0, PIbase + 0.15 * Math.max(0, (temp - 25) / 15));
+  const PI = Math.min(1.0, PITemp);
+
+  const preview = document.getElementById('pi-score-preview');
+  preview.style.display = 'block';
+  document.getElementById('pi-score-value').textContent = PI.toFixed(3);
+  document.getElementById('pi-progress-bar').style.width = `${(PI * 100).toFixed(0)}%`;
+}
+
+async function submitSurplus(e) {
+  e.preventDefault();
+  const btn = document.getElementById('surplus-submit-btn');
+  setLoading(btn, true);
+
+  const foodType = v('sf-food-type');
+  const surplusKg = parseFloat(v('sf-surplus-kg'));
+  const qtyPrepared = parseFloat(v('sf-qty-prepared'));
+  const PIbase = PI_BASE[foodType] || 0.65;
+  const temp = 28;
+  const PI_final = Math.min(1.0, PIbase + 0.15 * Math.max(0, (temp - 25) / 15));
+
+  const payload = {
+    donor_id: currentUser.data.id,
+    donor_name: currentUser.data.name,
+    food_type: foodType,
+    qty_prepared_kg: qtyPrepared,
+    surplus_kg: surplusKg,
+    event_type: v('sf-event-type') || currentUser.data.type,
+    event_date: v('sf-date'),
+    expiry_time: v('sf-expiry'),
+    city: currentUser.data.city,
+    pi_final: PI_final,
+    status: 'pending',
+    notes: v('sf-notes') || null
+  };
+
+  try {
+    const { error } = await supabase.from('surplus_events').insert(payload);
+    if (error) throw error;
+
+    showToast('🎉 Surplus logged! AI is matching you with the nearest NGO.', 'success');
+    document.getElementById('surplus-form').reset();
+    document.getElementById('pi-score-preview').style.display = 'none';
+    document.getElementById('sf-event-type').value = currentUser.data.type;
+    setDefaultFormDate();
+    loadDonorHistory();
+  } catch (err) {
+    showToast('Error submitting surplus: ' + (err.message || 'Unknown error'), 'error');
+  }
+  setLoading(btn, false);
+}
+
+// ==============================================
+// NGO DASHBOARD
+// ==============================================
+function populateNGODashboard() {
+  if (!currentUser || currentUser.type !== 'ngo') return;
+  const d = currentUser.data;
+  document.getElementById('ngo-welcome-name').textContent = `Welcome, ${d.name}! 🤝`;
+  document.getElementById('ngo-dash-sub').textContent = `${d.city} · Capacity: ${d.daily_capacity_kg} kg/day`;
+  document.getElementById('ngo-city-badge').textContent = `📍 ${d.city}`;
+  document.getElementById('ngo-storage-type').textContent = d.storage_type;
+  loadAvailableSurplus();
+  loadNGOHistory();
+}
+
+async function loadAvailableSurplus() {
+  if (!currentUser || currentUser.type !== 'ngo') return;
+  const container = document.getElementById('ngo-surplus-container');
+  container.innerHTML = '<div class="empty-state"><div class="spinner"></div><p style="margin-top:16px;color:var(--text-muted)">Scanning for surplus in your city...</p></div>';
+
+  try {
+    const { data, error } = await supabase
+      .from('surplus_events')
+      .select('*')
+      .eq('city', currentUser.data.city)
+      .eq('status', 'pending')
+      .order('pi_final', { ascending: false });
+    if (error) throw error;
+
+    if (data.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">🍽️</div>
+          <h4>No surplus available in ${currentUser.data.city} right now</h4>
+          <p>Check back later or refresh to see new listings.</p>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = `<div class="surplus-cards-grid">${data.map(row => renderSurplusCard(row)).join('')}</div>`;
+  } catch (err) {
+    container.innerHTML = `<div class="empty-state"><p style="color:var(--error)">Error: ${err.message}</p></div>`;
+  }
+}
+
+function renderSurplusCard(row) {
+  const paps = computePAPS(row);
+  const expiryStr = row.expiry_time ? row.expiry_time.slice(0,5) : '—';
+  const meals = Math.round((row.surplus_kg || 0) * 2.5);
+
+  return `
+    <div class="surplus-item-card glass-card" id="surplus-card-${row.id}">
+      <div class="surplus-item-header">
+        <div>
+          <div class="surplus-item-type">${row.food_type}</div>
+          <div style="font-size:13px;color:var(--text-muted);margin-top:2px">Donor in ${row.city}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:2px">PAPS Score</div>
+          <div class="surplus-paps">${paps.toFixed(3)}</div>
+        </div>
+      </div>
+      <div class="surplus-item-meta">
+        <div class="surplus-meta-tag">⚖️ ${row.surplus_kg} kg</div>
+        <div class="surplus-meta-tag">🍽️ ~${meals} meals</div>
+        <div class="surplus-meta-tag">⏰ Until ${expiryStr}</div>
+        <div class="surplus-meta-tag">📅 ${formatDate(row.event_date || row.created_at)}</div>
+      </div>
+      ${row.notes ? `<div style="font-size:13px;color:var(--text-muted);margin-bottom:14px;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:8px">📝 ${row.notes}</div>` : ''}
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="pill pill-purple">PI: ${row.pi_final ? row.pi_final.toFixed(3) : '—'}</span>
+        <span class="pill pill-teal">${row.event_type || '—'}</span>
+      </div>
+      <div style="margin-top:16px">
+        <button class="btn btn-secondary" style="width:100%" onclick="claimSurplus('${row.id}', ${row.surplus_kg}, ${paps})">
+          🤝 Claim This Donation
+        </button>
+      </div>
+    </div>`;
+}
+
+function computePAPS(row) {
+  // PAPS = weighted score: PI_final (40%) + freshness (30%) + quantity (30%)
+  const pi = row.pi_final || 0.65;
+  const quantityScore = Math.min(1.0, (row.surplus_kg || 0) / 100);
+  const freshnessScore = 0.85; // city-level match assumed fresh
+  return Math.min(1.0, pi * 0.4 + freshnessScore * 0.3 + quantityScore * 0.3);
+}
+
+async function claimSurplus(eventId, allocatedKg, papsScore) {
+  const btn = event.target;
+  setLoading(btn, true);
+
+  try {
+    // Update surplus_events status
+    const { error: updateErr } = await supabase
+      .from('surplus_events')
+      .update({ status: 'allocated' })
+      .eq('id', eventId)
+      .eq('status', 'pending');
+    if (updateErr) throw updateErr;
+
+    // Get event details for city/food_type
+    const { data: evRow } = await supabase.from('surplus_events').select('city,food_type').eq('id', eventId).single();
+
+    // Insert allocation
+    const { error: allocErr } = await supabase.from('allocations').insert({
+      event_id: eventId,
+      ngo_id: currentUser.data.id,
+      allocated_kg: allocatedKg,
+      paps_score: papsScore,
+      meals_served: Math.round(allocatedKg * 2.5),
+      city: evRow?.city || currentUser.data.city,
+      food_type: evRow?.food_type || '—',
+      donor_city: evRow?.city || currentUser.data.city
+    });
+    if (allocErr) throw allocErr;
+
+    showToast('🎉 Food claimed! Coordinate pickup with the donor. Check your allocation history.', 'success');
+    loadAvailableSurplus();
+    loadNGOHistory();
+  } catch (err) {
+    showToast('Claim failed: ' + (err.message || 'Already claimed or error occurred.'), 'error');
+  }
+  setLoading(btn, false);
+}
+
+async function loadNGOHistory() {
+  if (!currentUser || currentUser.type !== 'ngo') return;
+  const container = document.getElementById('ngo-history-container');
+
+  try {
+    const { data, error } = await supabase
+      .from('allocations')
+      .select('*')
+      .eq('ngo_id', currentUser.data.id)
+      .order('allocated_at', { ascending: false });
+    if (error) throw error;
+
+    const totalKg = data.reduce((s, r) => s + (r.allocated_kg || 0), 0);
+    const totalMeals = data.reduce((s, r) => s + (r.meals_served || 0), 0);
+    document.getElementById('ngo-total-kg').textContent = totalKg.toFixed(1);
+    document.getElementById('ngo-total-meals').textContent = Math.round(totalMeals);
+    document.getElementById('ngo-total-collections').textContent = data.length;
+
+    if (data.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">📭</div>
+          <h4>No allocations yet</h4>
+          <p>Claim your first donation from the list above.</p>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = `
+      <div class="table-wrapper">
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Food Type</th>
+                <th>kg Received</th>
+                <th>Meals Served</th>
+                <th>Donor City</th>
+                <th>PAPS Score</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${data.map(row => `
+                <tr>
+                  <td>${formatDate(row.allocated_at)}</td>
+                  <td><span class="pill pill-teal">${row.food_type || '—'}</span></td>
+                  <td>${row.allocated_kg}</td>
+                  <td>${Math.round((row.meals_served || 0))}</td>
+                  <td>${row.donor_city || row.city}</td>
+                  <td><span class="gradient-text-alt" style="font-weight:700">${row.paps_score ? row.paps_score.toFixed(3) : '—'}</span></td>
+                  <td><span class="status-pill status-allocated">Allocated</span></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+  } catch (err) {
+    container.innerHTML = `<div class="empty-state"><p style="color:var(--error)">Error: ${err.message}</p></div>`;
+  }
+}
+
+// ==============================================
+// ADMIN DASHBOARD
+// ==============================================
+function openAdminModal() {
+  document.getElementById('admin-login-modal').classList.add('open');
+  setTimeout(() => document.getElementById('admin-pw-input').focus(), 100);
+}
+function closeAdminModal() {
+  document.getElementById('admin-login-modal').classList.remove('open');
+  document.getElementById('admin-pw-input').value = '';
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeAdminModal();
+});
+
+function checkAdminLogin() {
+  const pw = document.getElementById('admin-pw-input').value;
+  if (pw === 'admin123') {
+    closeAdminModal();
+    currentUser = { type: 'admin', data: { name: 'Admin' } };
+    saveSession();
+    loadAdminData();
+    showPage('admin-dashboard');
+    showToast('Admin access granted. Welcome! 🔐', 'success');
+  } else {
+    showToast('Incorrect password.', 'error');
+    document.getElementById('admin-pw-input').value = '';
+  }
+}
+
+async function loadAdminData() {
+  try {
+    const [donors, ngos, events, allocs] = await Promise.all([
+      supabase.from('donors').select('id, city, created_at', { count: 'exact' }),
+      supabase.from('ngos').select('id, city, created_at', { count: 'exact' }),
+      supabase.from('surplus_events').select('*', { count: 'exact' }).order('created_at', { ascending: false }),
+      supabase.from('allocations').select('*', { count: 'exact' })
+    ]);
+
+    const totalKg = (events.data || []).reduce((s, r) => s + (r.surplus_kg || 0), 0);
+    const totalMeals = Math.round(totalKg * 2.5);
+
+    document.getElementById('admin-total-donors').textContent = donors.count ?? (donors.data || []).length;
+    document.getElementById('admin-total-ngos').textContent = ngos.count ?? (ngos.data || []).length;
+    document.getElementById('admin-total-events').textContent = events.count ?? (events.data || []).length;
+    document.getElementById('admin-total-alloc').textContent = allocs.count ?? (allocs.data || []).length;
+    document.getElementById('admin-total-kg').textContent = totalKg.toFixed(1) + ' kg';
+    document.getElementById('admin-total-meals').textContent = totalMeals;
+
+    // City breakdown
+    const cityMap = {};
+    (donors.data || []).forEach(d => { if (!cityMap[d.city]) cityMap[d.city] = { donors:0, ngos:0, events:0, kg:0 }; cityMap[d.city].donors++; });
+    (ngos.data || []).forEach(n => { if (!cityMap[n.city]) cityMap[n.city] = { donors:0, ngos:0, events:0, kg:0 }; cityMap[n.city].ngos++; });
+    (events.data || []).forEach(ev => {
+      if (!cityMap[ev.city]) cityMap[ev.city] = { donors:0, ngos:0, events:0, kg:0 };
+      cityMap[ev.city].events++;
+      cityMap[ev.city].kg += (ev.surplus_kg || 0);
+    });
+
+    const cityRows = Object.entries(cityMap).sort((a,b) => b[1].kg - a[1].kg);
+    document.getElementById('admin-city-tbody').innerHTML = cityRows.length === 0
+      ? '<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text-muted)">No data yet</td></tr>'
+      : cityRows.map(([city, stats]) => `
+        <tr>
+          <td style="font-weight:600">${city}</td>
+          <td>${stats.donors}</td>
+          <td>${stats.ngos}</td>
+          <td>${stats.events}</td>
+          <td><span class="gradient-text" style="font-weight:700">${stats.kg.toFixed(1)} kg</span></td>
+        </tr>
+      `).join('');
+
+    // Recent activity
+    const recentEvents = (events.data || []).slice(0, 10);
+    const actFeed = document.getElementById('admin-activity-feed');
+    if (recentEvents.length === 0) {
+      actFeed.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📭</div><h4>No activity yet</h4></div>`;
+    } else {
+      actFeed.innerHTML = `<div class="activity-feed">${recentEvents.map(ev => `
+        <div class="activity-item">
+          <div class="activity-dot activity-dot-${ev.status}"></div>
+          <div style="flex:1">
+            <span style="font-weight:600">${ev.food_type}</span>
+            <span style="color:var(--text-muted)"> — ${ev.surplus_kg} kg in </span>
+            <span style="color:var(--secondary)">${ev.city}</span>
+          </div>
+          <span class="status-pill status-${ev.status}">${ev.status}</span>
+          <span style="font-size:12px;color:var(--text-muted);white-space:nowrap">${formatDate(ev.created_at)}</span>
+        </div>
+      `).join('')}</div>`;
+    }
+
+    // All events table
+    document.getElementById('admin-events-tbody').innerHTML = (events.data || []).length === 0
+      ? '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted)">No events yet</td></tr>'
+      : (events.data || []).map(ev => `
+        <tr>
+          <td>${formatDate(ev.event_date || ev.created_at)}</td>
+          <td><span class="pill pill-purple">${ev.food_type}</span></td>
+          <td>${ev.city}</td>
+          <td>${ev.surplus_kg} kg</td>
+          <td><span class="gradient-text" style="font-weight:700">${ev.pi_final ? ev.pi_final.toFixed(3) : '—'}</span></td>
+          <td><span class="status-pill status-${ev.status}">${ev.status}</span></td>
+        </tr>
+      `).join('');
+
+  } catch (err) {
+    showToast('Admin data load error: ' + (err.message || 'Check Supabase connection'), 'error');
+  }
+}
+
+// ==============================================
+// TOAST NOTIFICATIONS
+// ==============================================
+function showToast(message, type = 'info') {
+  const icons = { success: '✅', error: '❌', info: 'ℹ️', warning: '⚠️' };
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.innerHTML = `<span class="toast-icon">${icons[type]}</span><span>${message}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.style.animation = 'fadeOut 0.4s ease forwards';
+    setTimeout(() => toast.remove(), 400);
+  }, 4000);
+}
+
+// ==============================================
+// SCROLL ANIMATIONS & STATS COUNT-UP
+// ==============================================
+function initScrollAnimations() {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        // Trigger count-up for stat numbers
+        entry.target.querySelectorAll('[data-target]').forEach(el => {
+          countUp(el, parseInt(el.dataset.target));
+        });
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+}
+
+function countUp(el, target) {
+  if (el._counted) return;
+  el._counted = true;
+  let current = 0;
+  const duration = 2000;
+  const step = target / (duration / 16);
+  const timer = setInterval(() => {
+    current = Math.min(current + step, target);
+    el.textContent = Math.floor(current).toLocaleString('en-IN') + (target >= 500 && target < 50000 ? '+' : target >= 50000 ? '+' : '');
+    if (current >= target) clearInterval(timer);
+  }, 16);
+}
+
+// ==============================================
+// HELPERS
+// ==============================================
+function v(id) {
+  const el = document.getElementById(id);
+  return el ? el.value.trim() : '';
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '—';
+  const d = new Date(dateStr);
+  if (isNaN(d)) return dateStr;
+  return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function setLoading(btn, loading) {
+  if (!btn) return;
+  if (loading) {
+    btn._origText = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner"></span> Processing...';
+    btn.disabled = true;
+  } else {
+    btn.innerHTML = btn._origText || 'Submit';
+    btn.disabled = false;
+  }
+}
+
+// ==============================================
+// KEYBOARD SHORTCUTS
+// ==============================================
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('admin-pw-input') === document.activeElement) {
+    checkAdminLogin();
+  }
+});
+
+// ==============================================
+// NAV SCROLL EFFECT
+// ==============================================
+window.addEventListener('scroll', () => {
+  const navbar = document.getElementById('navbar');
+  if (window.scrollY > 20) {
+    navbar.style.background = 'rgba(10,10,10,0.95)';
+  } else {
+    navbar.style.background = 'rgba(10,10,10,0.85)';
+  }
+});
+
+console.log('%cFeedify 🍱', 'font-size:24px;font-weight:900;color:#7C3AED;');
+console.log('%cAI-Powered Food Redistribution · SRMIST 2025', 'color:#06B6D4;font-size:12px');
+console.log('%c⚠️  Remember to set your SUPABASE_URL and SUPABASE_KEY!', 'color:#F59E0B;font-size:12px');
+</script>
+
+</body>
+</html>
