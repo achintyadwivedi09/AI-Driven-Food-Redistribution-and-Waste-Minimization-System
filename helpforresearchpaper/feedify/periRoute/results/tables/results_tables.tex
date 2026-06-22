@@ -1,0 +1,58 @@
+\documentclass{article}
+\usepackage{booktabs,multirow}
+\begin{document}
+
+%% TABLE 1: Surplus Prediction Model Comparison
+\begin{table}[h]
+\centering
+\caption{Surplus Prediction Model Performance}
+\label{tab:model_comparison}
+\begin{tabular}{lcccc}
+\toprule
+Model & MAE (kg) & RMSE (kg) & R\textsuperscript{2} & MAPE (\%) \\
+\midrule
+{LinearRegression} & 3.26 & 4.28 & 0.8207 & 14.73 \\
+{RandomForest} & 2.94 & 3.98 & 0.8444 & 12.85 \\
+{XGBoost} & 2.93 & 3.93 & 0.8482 & 12.76 \\
+\textbf{GradientBoosting} & 2.92 & 3.92 & 0.8490 & 12.75 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+%%TABLE 2: Allocation Method Comparison
+\begin{table}[h]
+\centering
+\caption{Comparative Evaluation of Allocation Methods}
+\label{tab:method_comparison}
+\begin{tabular}{lccccc}
+\toprule
+Method & Food Saved (kg) & Waste (kg) & Meals & Waste Red. (\%) & Gini \\
+\midrule
+\textbf{PAPS} & \textbf{3483.1} & \textbf{0.0} & \textbf{8708} & \textbf{baseline} & \textbf{0.600} \\
+{Random} & {3483.1} & {0.0} & {8708} & {baseline} & {0.725} \\
+{Nearest} & {3483.1} & {0.0} & {8708} & {baseline} & {0.763} \\
+{Demand_Only} & {3483.1} & {0.0} & {8708} & {baseline} & {0.998} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+%%TABLE 3: Novel Contributions Summary
+\begin{table}[h]
+\centering
+\caption{Summary of Novel Contributions and Impact}
+\label{tab:nc_summary}
+\begin{tabular}{llll}
+\toprule
+ID & Innovation & Key Metric & Value \\
+\midrule
+NC1 & Temp. Perishability Decay & PI range & 0.55--1.0 \\
+NC2 & Dynamic NGO Demand Pred. & Avg MAE & 12.56 kg \\
+NC3 & Weather Expiry Risk Score & Heat index range & 15--60 \\
+NC4 & Fairness-Aware Allocation & Gini (PAPS) & 0.600 \\
+NC5 & Multi-Objective Pareto & Waste reduction & 0.0\% \\
+NC6 & Cold-Chain Routing & Perishable foods routed & Salad,Sabzi,Biryani,Roti \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\end{document}

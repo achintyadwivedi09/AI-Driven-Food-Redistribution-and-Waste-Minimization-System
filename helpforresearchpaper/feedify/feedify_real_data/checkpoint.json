@@ -1,0 +1,27 @@
+{
+  "part1": {
+    "done": true,
+    "rows_collected": 25578,
+    "last_city": "Kochi",
+    "timestamp": "2026-06-21T19:15:35.158076"
+  },
+  "part2": {
+    "done": true,
+    "rows_collected": 500,
+    "timestamp": "2026-06-21T19:16:52.425336"
+  },
+  "part3": {
+    "done": true,
+    "rows_collected": 50033,
+    "timestamp": "2026-06-21T19:25:16.783444"
+  },
+  "part4": {
+    "done": true,
+    "rows_collected": 500,
+    "timestamp": "2026-06-21T19:28:04.920362"
+  },
+  "part5": {
+    "done": true,
+    "timestamp": "2026-06-21T19:28:08.235763"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "fao_loss_pct": 30.0,
+  "fao_source": "default (FAO 2021 calibrated estimate)",
+  "datagov_states_fetched": [],
+  "event_surplus_params": {
+    "Wedding": {
+      "mean_kg": 150,
+      "std_kg": 50,
+      "loss_rate": 0.3
+    },
+    "Corporate": {
+      "mean_kg": 80,
+      "std_kg": 25,
+      "loss_rate": 0.2
+    },
+    "Restaurant": {
+      "mean_kg": 60,
+      "std_kg": 20,
+      "loss_rate": 0.25
+    },
+    "Temple": {
+      "mean_kg": 200,
+      "std_kg": 70,
+      "loss_rate": 0.15
+    },
+    "College Canteen": {
+      "mean_kg": 50,
+      "std_kg": 15,
+      "loss_rate": 0.2
+    },
+    "Hospital": {
+      "mean_kg": 40,
+      "std_kg": 12,
+      "loss_rate": 0.1
+    }
+  },
+  "pi_base_map": {
+    "Rice": 0.6,
+    "Dal": 0.55,
+    "Sabzi": 0.8,
+    "Roti": 0.7,
+    "Biryani": 0.75,
+    "Sweets": 0.65,
+    "Salad": 0.9
+  }
+}

@@ -1,0 +1,1 @@
+{"waste_red_random": 0.0, "waste_red_nearest": 0.0, "waste_red_demand": 0.0, "total_meals": 8707.8, "gini_paps": 0.6, "gini_random": 0.7252, "gini_improvement": 17.27, "f_stat": NaN, "p_val": NaN, "route_improvement": -14.72, "route_p": 0.0, "mean_greedy": 4574.82, "mean_twoopt": 5248.01, "demand_mae": 12.56, "optimal_k": 8, "best_silhouette": 0.2804}

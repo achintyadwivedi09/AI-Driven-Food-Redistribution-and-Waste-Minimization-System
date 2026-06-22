@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Feedify — AI-Driven Smart Food Redistribution System</title>
+  <meta name="description" content="Feedify connects surplus food to 500+ NGOs across 14 Indian cities using machine learning, reducing food waste with 100% allocation efficiency." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0A0A0A;
+      --bg2: #111111;
+      --bg3: #161616;
+      --white: #FFFFFF;
+      --gray: #888888;
+      --gray2: #555555;
+      --purple: #7C3AED;
+      --teal: #06B6D4;
+      --gradient: linear-gradient(135deg, #7C3AED, #06B6D4);
+      --gradient-text: linear-gradient(135deg, #A78BFA, #22D3EE);
+      --glass-bg: rgba(255,255,255,0.04);
+      --glass-border: rgba(255,255,255,0.08);
+      --glass-hover: rgba(255,255,255,0.08);
+      --card-glow: 0 0 40px rgba(124,58,237,0.15);
+      --card-glow-hover: 0 0 60px rgba(124,58,237,0.3), 0 0 100px rgba(6,182,212,0.1);
+      --radius: 16px;
+      --radius-sm: 8px;
+      --transition: 0.3s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--white);
+      line-height: 1.6;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ─── SCROLLBAR ─── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--purple); border-radius: 3px; }
+
+    /* ─── NAVBAR ─── */
+    #navbar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 60px;
+      transition: all var(--transition);
+    }
+    #navbar.scrolled {
+      background: rgba(10,10,10,0.85);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-bottom: 1px solid var(--glass-border);
+      padding: 14px 60px;
+    }
+    .nav-logo {
+      font-size: 22px; font-weight: 800; letter-spacing: -0.5px;
+      background: var(--gradient-text); -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent; background-clip: text;
+      text-decoration: none;
+    }
+    .nav-links { display: flex; align-items: center; gap: 36px; }
+    .nav-links a {
+      color: var(--gray); font-size: 14px; font-weight: 500;
+      text-decoration: none; letter-spacing: 0.2px;
+      transition: color var(--transition);
+    }
+    .nav-links a:hover { color: var(--white); }
+    .nav-btn {
+      padding: 8px 20px; border-radius: var(--radius-sm);
+      font-size: 14px; font-weight: 600; cursor: pointer;
+      text-decoration: none; border: 1px solid transparent;
+      background: var(--gradient);
+      background-origin: border-box;
+      color: var(--white);
+      position: relative;
+      background-clip: padding-box;
+      transition: opacity var(--transition), transform var(--transition);
+    }
+    .nav-btn::before {
+      content: '';
+      position: absolute; inset: -1px;
+      border-radius: var(--radius-sm);
+      background: var(--gradient);
+      z-index: -1;
+    }
+    .nav-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+
+    /* ─── HERO ─── */
+    #hero {
+      position: relative; min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center; padding: 120px 40px 80px;
+      overflow: hidden;
+    }
+    #hero-canvas {
+      position: absolute; inset: 0; z-index: 0;
+      pointer-events: none;
+    }
+    .hero-content { position: relative; z-index: 1; max-width: 900px; }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 16px; border-radius: 100px;
+      background: rgba(124,58,237,0.15);
+      border: 1px solid rgba(124,58,237,0.3);
+      font-size: 13px; color: #A78BFA; font-weight: 500;
+      margin-bottom: 32px; letter-spacing: 0.3px;
+    }
+    .hero-badge span { width: 6px; height: 6px; border-radius: 50%; background: #7C3AED; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.3)} }
+    .hero-title {
+      font-size: clamp(48px, 7vw, 80px); font-weight: 900;
+      line-height: 1.05; letter-spacing: -3px; margin-bottom: 24px;
+      color: var(--white);
+    }
+    .hero-title .gradient-word {
+      background: var(--gradient-text);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .hero-subtitle {
+      font-size: 18px; color: var(--gray); line-height: 1.7;
+      max-width: 580px; margin: 0 auto 48px; font-weight: 400;
+    }
+    .hero-buttons { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+    .btn-primary {
+      padding: 14px 32px; border-radius: var(--radius-sm);
+      font-size: 15px; font-weight: 600; cursor: pointer;
+      background: var(--gradient); color: var(--white);
+      border: none; text-decoration: none;
+      transition: transform var(--transition), box-shadow var(--transition);
+      letter-spacing: 0.2px;
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(124,58,237,0.4);
+    }
+    .btn-outline {
+      padding: 14px 32px; border-radius: var(--radius-sm);
+      font-size: 15px; font-weight: 600; cursor: pointer;
+      background: transparent; color: var(--white);
+      border: 1px solid var(--glass-border); text-decoration: none;
+      transition: all var(--transition); letter-spacing: 0.2px;
+    }
+    .btn-outline:hover {
+      background: var(--glass-hover); border-color: rgba(255,255,255,0.2);
+      transform: translateY(-2px);
+    }
+    .hero-scroll {
+      position: absolute; bottom: 40px; left: 50%;
+      transform: translateX(-50%);
+      display: flex; flex-direction: column; align-items: center;
+      gap: 8px; color: var(--gray2); font-size: 12px;
+      animation: bounce 2s infinite;
+    }
+    .hero-scroll-line {
+      width: 1px; height: 40px; background: linear-gradient(to bottom, var(--gray2), transparent);
+    }
+    @keyframes bounce { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY(8px)} }
+
+    /* ─── SECTION BASE ─── */
+    section { padding: 100px 60px; max-width: 1200px; margin: 0 auto; }
+    .section-label {
+      font-size: 12px; font-weight: 700; letter-spacing: 3px;
+      text-transform: uppercase; color: var(--purple); margin-bottom: 16px;
+    }
+    .section-title {
+      font-size: clamp(36px, 4vw, 52px); font-weight: 800;
+      line-height: 1.1; letter-spacing: -1.5px; margin-bottom: 16px;
+    }
+    .section-subtitle {
+      font-size: 16px; color: var(--gray); max-width: 520px; line-height: 1.7;
+    }
+
+    /* ─── STATS BAR ─── */
+    #stats {
+      padding: 0 60px 80px; max-width: 1200px; margin: 0 auto;
+    }
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+    }
+    .stat-card {
+      background: var(--glass-bg); border: 1px solid var(--glass-border);
+      border-radius: var(--radius); padding: 32px 28px;
+      text-align: center;
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      transition: all var(--transition);
+    }
+    .stat-card:hover {
+      background: var(--glass-hover); border-color: rgba(124,58,237,0.3);
+      transform: translateY(-4px); box-shadow: var(--card-glow-hover);
+    }
+    .stat-number {
+      font-size: 40px; font-weight: 800; letter-spacing: -1.5px;
+      background: var(--gradient-text);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      display: block; margin-bottom: 8px;
+    }
+    .stat-label { font-size: 14px; color: var(--gray); font-weight: 500; }
+
+    /* ─── PIPELINE (HOW IT WORKS) ─── */
+    #pipeline { padding-top: 80px; }
+    .pipeline-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 60px;
+    }
+    .pipeline-card {
+      background: var(--glass-bg); border: 1px solid var(--glass-border);
+      border-radius: var(--radius); padding: 36px 32px;
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      transition: all var(--transition); position: relative; overflow: hidden;
+    }
+    .pipeline-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: var(--gradient); opacity: 0; transition: opacity var(--transition);
+    }
+    .pipeline-card:hover {
+      background: var(--glass-hover); border-color: rgba(124,58,237,0.25);
+      transform: translateY(-4px); box-shadow: var(--card-glow-hover);
+    }
+    .pipeline-card:hover::before { opacity: 1; }
+    .card-number {
+      font-size: 13px; font-weight: 700; letter-spacing: 2px;
+      color: var(--purple); margin-bottom: 16px; font-variant-numeric: tabular-nums;
+    }
+    .card-title { font-size: 20px; font-weight: 700; margin-bottom: 12px; letter-spacing: -0.5px; }
+    .card-desc { font-size: 14px; color: var(--gray); line-height: 1.7; }
+    .card-tag {
+      display: inline-block; margin-top: 20px; padding: 4px 12px;
+      border-radius: 100px; font-size: 11px; font-weight: 600; letter-spacing: 0.5px;
+      background: rgba(124,58,237,0.15); color: #A78BFA;
+      border: 1px solid rgba(124,58,237,0.2);
+    }
+
+    /* ─── RESULTS ─── */
+    #results { border-top: 1px solid var(--glass-border); }
+    .results-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 60px; }
+    .result-block {
+      background: var(--glass-bg); border: 1px solid var(--glass-border);
+      border-radius: var(--radius); overflow: hidden;
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    }
+    .result-block-header {
+      padding: 24px 28px 16px; border-bottom: 1px solid var(--glass-border);
+    }
+    .result-block-title { font-size: 16px; font-weight: 700; letter-spacing: -0.3px; }
+    .result-block-sub { font-size: 13px; color: var(--gray); margin-top: 4px; }
+    table { width: 100%; border-collapse: collapse; }
+    thead tr { background: rgba(255,255,255,0.03); }
+    th {
+      padding: 12px 20px; text-align: left; font-size: 11px;
+      font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+      color: var(--gray); border-bottom: 1px solid var(--glass-border);
+    }
+    td { padding: 14px 20px; font-size: 14px; font-weight: 400; color: var(--gray); }
+    tbody tr { transition: background var(--transition); }
+    tbody tr:hover { background: rgba(255,255,255,0.03); }
+    tbody tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+    tbody tr:nth-child(even):hover { background: rgba(255,255,255,0.04); }
+    .best-row td { color: var(--white) !important; font-weight: 600; }
+    .best-row td:first-child {
+      background: linear-gradient(90deg, rgba(124,58,237,0.2), transparent);
+      border-left: 2px solid var(--purple);
+    }
+    .metric-val {
+      font-weight: 700; font-variant-numeric: tabular-nums;
+      background: var(--gradient-text);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .gini-bar-wrap { display: flex; align-items: center; gap: 12px; }
+    .gini-bar-bg { flex: 1; height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; }
+    .gini-bar { height: 100%; border-radius: 2px; background: var(--gradient); transition: width 1s ease; }
+
+    /* ─── TECH STACK ─── */
+    #techstack { border-top: 1px solid var(--glass-border); }
+    .tech-grid { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 48px; }
+    .tech-badge {
+      padding: 10px 20px; border-radius: var(--radius-sm);
+      background: var(--glass-bg); border: 1px solid var(--glass-border);
+      font-size: 14px; font-weight: 600; color: var(--white);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      transition: all var(--transition); display: flex; align-items: center; gap: 8px;
+    }
+    .tech-badge:hover {
+      background: var(--glass-hover); border-color: rgba(124,58,237,0.3);
+      transform: translateY(-2px); box-shadow: var(--card-glow);
+    }
+    .tech-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gradient); flex-shrink: 0; }
+
+    /* ─── TEAM ─── */
+    #team { border-top: 1px solid var(--glass-border); }
+    .team-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 60px; }
+    .team-card {
+      background: var(--glass-bg); border: 1px solid var(--glass-border);
+      border-radius: var(--radius); padding: 40px 32px;
+      text-align: center; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      transition: all var(--transition);
+    }
+    .team-card:hover {
+      background: var(--glass-hover); border-color: rgba(124,58,237,0.25);
+      transform: translateY(-4px); box-shadow: var(--card-glow-hover);
+    }
+    .avatar {
+      width: 72px; height: 72px; border-radius: 50%;
+      background: var(--gradient); display: flex; align-items: center; justify-content: center;
+      font-size: 24px; font-weight: 800; color: var(--white);
+      margin: 0 auto 24px; letter-spacing: -1px;
+    }
+    .team-name { font-size: 18px; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.3px; }
+    .team-role { font-size: 14px; color: #A78BFA; font-weight: 500; margin-bottom: 6px; }
+    .team-inst { font-size: 13px; color: var(--gray); line-height: 1.5; }
+    .team-badge {
+      display: inline-block; margin-top: 16px; padding: 4px 12px;
+      border-radius: 100px; font-size: 11px; font-weight: 600;
+      background: rgba(6,182,212,0.1); color: #22D3EE;
+      border: 1px solid rgba(6,182,212,0.2);
+    }
+
+    /* ─── FOOTER ─── */
+    footer {
+      border-top: 1px solid var(--glass-border);
+      padding: 48px 60px; text-align: center;
+    }
+    .footer-logo {
+      font-size: 20px; font-weight: 800;
+      background: var(--gradient-text);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      margin-bottom: 12px;
+    }
+    .footer-text { font-size: 14px; color: var(--gray); }
+    .footer-text a { color: var(--gray); text-decoration: underline; text-underline-offset: 3px; }
+    .footer-text a:hover { color: var(--white); }
+
+    /* ─── ANIMATION CLASSES ─── */
+    .fade-up {
+      opacity: 0; transform: translateY(30px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .fade-up.visible { opacity: 1; transform: translateY(0); }
+    .fade-up-delay-1 { transition-delay: 0.1s; }
+    .fade-up-delay-2 { transition-delay: 0.2s; }
+    .fade-up-delay-3 { transition-delay: 0.3s; }
+    .fade-up-delay-4 { transition-delay: 0.4s; }
+    .fade-up-delay-5 { transition-delay: 0.5s; }
+    .fade-up-delay-6 { transition-delay: 0.6s; }
+
+    /* ─── DIVIDER ─── */
+    .gradient-divider {
+      width: 60px; height: 3px; background: var(--gradient);
+      border-radius: 2px; margin-top: 20px; margin-bottom: 0;
+    }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 900px) {
+      section, #stats { padding-left: 24px; padding-right: 24px; }
+      #navbar, #navbar.scrolled { padding-left: 24px; padding-right: 24px; }
+      footer { padding-left: 24px; padding-right: 24px; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .pipeline-grid { grid-template-columns: repeat(2, 1fr); }
+      .results-grid { grid-template-columns: 1fr; }
+      .team-grid { grid-template-columns: 1fr; }
+      .nav-links a:not(.nav-btn) { display: none; }
+    }
+    @media (max-width: 600px) {
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .pipeline-grid { grid-template-columns: 1fr; }
+      .hero-title { letter-spacing: -2px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ─── NAVBAR ─── -->
+<nav id="navbar">
+  <a href="#hero" class="nav-logo">Feedify</a>
+  <div class="nav-links">
+    <a href="#pipeline">About</a>
+    <a href="#results">Results</a>
+    <a href="#team">Team</a>
+    <a href="https://github.com" target="_blank" class="nav-btn">GitHub →</a>
+  </div>
+</nav>
+
+<!-- ─── HERO ─── -->
+<section id="hero">
+  <canvas id="hero-canvas"></canvas>
+  <div class="hero-content">
+    <div class="hero-badge">
+      <span></span> Research Project · SRMIST · IEEE 2025
+    </div>
+    <h1 class="hero-title">
+      AI That<br /><span class="gradient-word">Feeds Cities</span>
+    </h1>
+    <p class="hero-subtitle">
+      Connecting surplus food to 500+ NGOs across 14 Indian cities using machine learning — with 100% allocation efficiency and fairness-aware distribution.
+    </p>
+    <div class="hero-buttons">
+      <a href="#results" class="btn-primary">View Results ↓</a>
+      <a href="#pipeline" class="btn-outline">Read Paper →</a>
+    </div>
+  </div>
+  <div class="hero-scroll">
+    <div class="hero-scroll-line"></div>
+    Scroll
+  </div>
+</section>
+
+<!-- ─── STATS BAR ─── -->
+<div id="stats">
+  <div class="stats-grid">
+    <div class="stat-card fade-up">
+      <span class="stat-number" data-target="50033" data-suffix="">0</span>
+      <span class="stat-label">Donor Records</span>
+    </div>
+    <div class="stat-card fade-up fade-up-delay-1">
+      <span class="stat-number" data-target="14" data-suffix="">0</span>
+      <span class="stat-label">Indian Cities</span>
+    </div>
+    <div class="stat-card fade-up fade-up-delay-2">
+      <span class="stat-number" data-target="8708" data-suffix="">0</span>
+      <span class="stat-label">Meals Served</span>
+    </div>
+    <div class="stat-card fade-up fade-up-delay-3">
+      <span class="stat-number" data-target="0" data-suffix=" kg" data-special="zero">0.0 kg</span>
+      <span class="stat-label">Food Wasted</span>
+    </div>
+  </div>
+</div>
+
+<!-- ─── PIPELINE ─── -->
+<section id="pipeline">
+  <div>
+    <p class="section-label fade-up">Novel Contributions</p>
+    <h2 class="section-title fade-up fade-up-delay-1">The Pipeline</h2>
+    <p class="section-subtitle fade-up fade-up-delay-2">Six novel algorithmic contributions working together to move food from surplus to served — faster and fairer than any prior system.</p>
+    <div class="gradient-divider fade-up fade-up-delay-2"></div>
+  </div>
+  <div class="pipeline-grid">
+    <div class="pipeline-card fade-up">
+      <div class="card-number">01 — NC1</div>
+      <div class="card-title">Temperature-Aware Perishability Decay</div>
+      <div class="card-desc">Real ambient temperature from Open-Meteo integrated into an exponential PI decay model. PI_final = min(1.0, PI_base + 0.15 × max(0, (temp−25)/15)).</div>
+      <span class="card-tag">Perishability Index</span>
+    </div>
+    <div class="pipeline-card fade-up fade-up-delay-1">
+      <div class="card-number">02 — NC2</div>
+      <div class="card-title">Dynamic Per-NGO Demand Forecasting</div>
+      <div class="card-desc">Individualized Random Forest models trained for each of 500 NGO partners, capturing unique weekly seasonality and festival demand cycles. Avg R²=0.3643.</div>
+      <span class="card-tag">Demand Prediction</span>
+    </div>
+    <div class="pipeline-card fade-up fade-up-delay-2">
+      <div class="card-number">03 — NC3</div>
+      <div class="card-title">Weather-Adjusted Expiry Risk Score</div>
+      <div class="card-desc">Heat index derived from real temperature and humidity is fused into allocation priority, ensuring high-risk food is moved first during India's summer months.</div>
+      <span class="card-tag">Risk Scoring</span>
+    </div>
+    <div class="pipeline-card fade-up fade-up-delay-3">
+      <div class="card-number">04 — NC4</div>
+      <div class="card-title">Fairness-Aware PAPS Allocation</div>
+      <div class="card-desc">The Perishability-Aware Priority Score embeds a Gini monitoring penalty that reduces inequality from 0.725 (Random) to 0.600 — a 17.3% fairness improvement.</div>
+      <span class="card-tag">Gini Optimization</span>
+    </div>
+    <div class="pipeline-card fade-up fade-up-delay-4">
+      <div class="card-number">05 — NC5</div>
+      <div class="card-title">Multi-Objective Pareto Scalarization</div>
+      <div class="card-desc">PAPS simultaneously minimizes waste, maximizes fairness, and optimizes logistics efficiency via weighted objective scalarization with sensitivity-validated weights.</div>
+      <span class="card-tag">Multi-Objective</span>
+    </div>
+    <div class="pipeline-card fade-up fade-up-delay-5">
+      <div class="card-number">06 — NC6</div>
+      <div class="card-title">Cold-Chain Compatibility Routing</div>
+      <div class="card-desc">Storage-type-aware assignment ensures items with PI_final > 0.70 reach NGOs with refrigeration. Cold factor = 1.0 (cold) | 0.5 (dry) | 0.0 (none).</div>
+      <span class="card-tag">Cold Chain</span>
+    </div>
+  </div>
+</section>
+
+<!-- ─── RESULTS ─── -->
+<section id="results">
+  <div>
+    <p class="section-label fade-up">Experimental Results</p>
+    <h2 class="section-title fade-up fade-up-delay-1">By The Numbers</h2>
+    <p class="section-subtitle fade-up fade-up-delay-2">Validated on 50,033 real-calibrated records across 14 Indian cities, 2020–2024.</p>
+    <div class="gradient-divider fade-up fade-up-delay-2"></div>
+  </div>
+  <div class="results-grid">
+    <!-- Model Comparison -->
+    <div class="result-block fade-up">
+      <div class="result-block-header">
+        <div class="result-block-title">Surplus Prediction Model Comparison</div>
+        <div class="result-block-sub">80/20 temporal split · 3-fold GridSearchCV</div>
+      </div>
+      <table>
+        <thead>
+          <tr><th>Model</th><th>R²</th><th>RMSE (kg)</th><th>MAE (kg)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Linear Regression</td><td>0.8207</td><td>—</td><td>—</td></tr>
+          <tr><td>Random Forest</td><td>0.8444</td><td>—</td><td>—</td></tr>
+          <tr><td>XGBoost</td><td>0.8482</td><td>—</td><td>—</td></tr>
+          <tr class="best-row">
+            <td>⭐ Gradient Boosting</td>
+            <td><span class="metric-val">0.8490</span></td>
+            <td><span class="metric-val">3.92</span></td>
+            <td><span class="metric-val">2.92</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <!-- Fairness Comparison -->
+    <div class="result-block fade-up fade-up-delay-1">
+      <div class="result-block-header">
+        <div class="result-block-title">Allocation Fairness — Gini Coefficient</div>
+        <div class="result-block-sub">Lower = more equitable · 200 test events</div>
+      </div>
+      <table>
+        <thead>
+          <tr><th>Method</th><th>Gini</th><th>Distribution</th></tr>
+        </thead>
+        <tbody>
+          <tr class="best-row">
+            <td>⭐ PAPS (Ours)</td>
+            <td><span class="metric-val">0.600</span></td>
+            <td>
+              <div class="gini-bar-wrap">
+                <div class="gini-bar-bg"><div class="gini-bar" style="width:60%"></div></div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td>Random</td><td>0.725</td>
+            <td><div class="gini-bar-wrap"><div class="gini-bar-bg"><div class="gini-bar" style="width:72.5%;background:rgba(255,255,255,0.2)"></div></div></div></td>
+          </tr>
+          <tr>
+            <td>Nearest</td><td>0.763</td>
+            <td><div class="gini-bar-wrap"><div class="gini-bar-bg"><div class="gini-bar" style="width:76.3%;background:rgba(255,255,255,0.15)"></div></div></div></td>
+          </tr>
+          <tr>
+            <td>Demand-Only</td><td>0.998</td>
+            <td><div class="gini-bar-wrap"><div class="gini-bar-bg"><div class="gini-bar" style="width:99.8%;background:rgba(239,68,68,0.4)"></div></div></div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <!-- Ablation -->
+    <div class="result-block fade-up fade-up-delay-2">
+      <div class="result-block-header">
+        <div class="result-block-title">Ablation Study — Feature Impact</div>
+        <div class="result-block-sub">RMSE change vs. full-feature baseline</div>
+      </div>
+      <table>
+        <thead><tr><th>Feature Removed</th><th>RMSE Δ</th></tr></thead>
+        <tbody>
+          <tr><td>Festival / Weekend Flags</td><td style="color:#F87171;font-weight:700">+15.6% ↑ worst</td></tr>
+          <tr><td>Rolling 7-day Statistics</td><td style="color:#F87171;font-weight:600">+13.7% ↑</td></tr>
+          <tr><td>Lag Features (t−1, t−7)</td><td style="color:#FCD34D">+1.0% ↑</td></tr>
+          <tr class="best-row"><td>All Features (baseline)</td><td><span class="metric-val">0.0% baseline</span></td></tr>
+          <tr><td>Temporal Calendar</td><td style="color:#6EE7B7">−0.1% ↓</td></tr>
+          <tr><td>Perishability Features</td><td style="color:#6EE7B7">−0.2% ↓</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <!-- Key Metrics -->
+    <div class="result-block fade-up fade-up-delay-3">
+      <div class="result-block-header">
+        <div class="result-block-title">System Performance Summary</div>
+        <div class="result-block-sub">Full pipeline · 14 cities · 2020–2024</div>
+      </div>
+      <table>
+        <thead><tr><th>Metric</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td>Allocation Efficiency</td><td><span class="metric-val">100%</span></td></tr>
+          <tr><td>Total Food Saved</td><td><span class="metric-val">3,483.1 kg</span></td></tr>
+          <tr><td>Meals Served (PAPS)</td><td><span class="metric-val">8,708</span></td></tr>
+          <tr><td>Fairness vs Random</td><td><span class="metric-val">+17.3%</span></td></tr>
+          <tr><td>Optimal Clusters (k)</td><td><span class="metric-val">8</span></td></tr>
+          <tr><td>Silhouette Score</td><td><span class="metric-val">0.2804</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ─── TECH STACK ─── -->
+<section id="techstack">
+  <div>
+    <p class="section-label fade-up">Infrastructure</p>
+    <h2 class="section-title fade-up fade-up-delay-1">Built With</h2>
+    <p class="section-subtitle fade-up fade-up-delay-2">A modern, production-ready stack combining ML research tooling with scalable web infrastructure.</p>
+    <div class="gradient-divider fade-up fade-up-delay-2"></div>
+  </div>
+  <div class="tech-grid fade-up fade-up-delay-3">
+    <div class="tech-badge"><div class="tech-dot"></div>React 18</div>
+    <div class="tech-badge"><div class="tech-dot"></div>Python 3.11</div>
+    <div class="tech-badge"><div class="tech-dot"></div>FastAPI</div>
+    <div class="tech-badge"><div class="tech-dot"></div>Supabase (PostgreSQL)</div>
+    <div class="tech-badge"><div class="tech-dot"></div>scikit-learn</div>
+    <div class="tech-badge"><div class="tech-dot"></div>XGBoost</div>
+    <div class="tech-badge"><div class="tech-dot"></div>Gradient Boosting</div>
+    <div class="tech-badge"><div class="tech-dot"></div>Leaflet.js</div>
+    <div class="tech-badge"><div class="tech-dot"></div>Tailwind CSS</div>
+    <div class="tech-badge"><div class="tech-dot"></div>Open-Meteo API</div>
+    <div class="tech-badge"><div class="tech-dot"></div>OSRM Routing</div>
+    <div class="tech-badge"><div class="tech-dot"></div>NGO Darpan API</div>
+  </div>
+</section>
+
+<!-- ─── TEAM ─── -->
+<section id="team">
+  <div>
+    <p class="section-label fade-up">The People</p>
+    <h2 class="section-title fade-up fade-up-delay-1">Meet The Team</h2>
+    <p class="section-subtitle fade-up fade-up-delay-2">Researchers from SRMIST Kattankulathur, Department of Networking and Communications.</p>
+    <div class="gradient-divider fade-up fade-up-delay-2"></div>
+  </div>
+  <div class="team-grid">
+    <div class="team-card fade-up">
+      <div class="avatar">AD</div>
+      <div class="team-name">Achintya Dwivedi</div>
+      <div class="team-role">ML Pipeline + Full Stack</div>
+      <div class="team-inst">SRMIST Kattankulathur<br />Dept. of Networking &amp; Communications</div>
+      <span class="team-badge">Lead Author</span>
+    </div>
+    <div class="team-card fade-up fade-up-delay-1">
+      <div class="avatar">RP</div>
+      <div class="team-name">S. Rajat Pandey</div>
+      <div class="team-role">Research + Data Analysis</div>
+      <div class="team-inst">SRMIST Kattankulatham<br />Dept. of Networking &amp; Communications</div>
+      <span class="team-badge">Co-Author</span>
+    </div>
+    <div class="team-card fade-up fade-up-delay-2">
+      <div class="avatar">BS</div>
+      <div class="team-name">Dr. P. Balaji Srikaanth</div>
+      <div class="team-role">Faculty Advisor</div>
+      <div class="team-inst">SRMIST Kattankulatham<br />Dept. of Networking &amp; Communications</div>
+      <span class="team-badge">Faculty Advisor</span>
+    </div>
+  </div>
+</section>
+
+<!-- ─── FOOTER ─── -->
+<footer>
+  <div class="footer-logo">Feedify</div>
+  <p class="footer-text">
+    Feedify © 2025 · SRMIST Kattankulatham ·
+    <a href="https://github.com" target="_blank">GitHub</a>
+  </p>
+  <p class="footer-text" style="margin-top:8px;font-size:12px;color:#444">
+    50,033 records · 14 cities · 8,708 meals served · 0.0 kg wasted
+  </p>
+</footer>
+
+<script>
+  /* ─── CANVAS PARTICLES ─── */
+  (function() {
+    const canvas = document.getElementById('hero-canvas');
+    const ctx = canvas.getContext('2d');
+    let W, H, particles = [];
+    const N = 80;
+
+    function resize() {
+      W = canvas.width  = canvas.offsetWidth;
+      H = canvas.height = canvas.offsetHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    function Particle() {
+      this.reset();
+    }
+    Particle.prototype.reset = function() {
+      this.x = Math.random() * W;
+      this.y = Math.random() * H;
+      this.r = Math.random() * 1.5 + 0.3;
+      this.vx = (Math.random() - 0.5) * 0.4;
+      this.vy = (Math.random() - 0.5) * 0.4;
+      this.alpha = Math.random() * 0.5 + 0.1;
+      this.color = Math.random() > 0.5 ? '124,58,237' : '6,182,212';
+    };
+    Particle.prototype.update = function() {
+      this.x += this.vx; this.y += this.vy;
+      if (this.x < 0 || this.x > W || this.y < 0 || this.y > H) this.reset();
+    };
+    Particle.prototype.draw = function() {
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${this.color},${this.alpha})`;
+      ctx.fill();
+    };
+
+    for (let i = 0; i < N; i++) particles.push(new Particle());
+
+    function drawLines() {
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const d = Math.sqrt(dx*dx + dy*dy);
+          if (d < 120) {
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.strokeStyle = `rgba(124,58,237,${0.06 * (1 - d/120)})`;
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+          }
+        }
+      }
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, W, H);
+      particles.forEach(p => { p.update(); p.draw(); });
+      drawLines();
+      requestAnimationFrame(animate);
+    }
+    animate();
+  })();
+
+  /* ─── NAVBAR SCROLL ─── */
+  const navbar = document.getElementById('navbar');
+  window.addEventListener('scroll', () => {
+    navbar.classList.toggle('scrolled', window.scrollY > 30);
+  });
+
+  /* ─── INTERSECTION OBSERVER (fade-up) ─── */
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+
+  document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+  /* ─── COUNTER ANIMATION ─── */
+  function animateCounter(el) {
+    if (el.dataset.special === 'zero') return; // already shows "0.0 kg"
+    const target = parseInt(el.dataset.target);
+    const suffix = el.dataset.suffix || '';
+    const duration = 1800;
+    const start = performance.now();
+    function step(now) {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / duration, 1);
+      // ease out
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const current = Math.round(eased * target);
+      el.textContent = current.toLocaleString('en-IN') + suffix;
+      if (progress < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  const counterObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting && !entry.target.dataset.counted) {
+        entry.target.dataset.counted = '1';
+        animateCounter(entry.target);
+      }
+    });
+  }, { threshold: 0.5 });
+
+  document.querySelectorAll('.stat-number[data-target]').forEach(el => {
+    counterObserver.observe(el);
+  });
+
+  /* ─── SMOOTH SCROLL FOR NAV LINKS ─── */
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      const target = document.querySelector(a.getAttribute('href'));
+      if (target) {
+        e.preventDefault();
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  });
+</script>
+</body>
+</html>

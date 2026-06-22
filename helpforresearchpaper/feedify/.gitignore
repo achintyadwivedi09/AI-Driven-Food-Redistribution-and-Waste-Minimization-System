@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+__pycache__/
+
+# Environment
+.env
+.env.local
+
+# Build
+dist/
+build/
+
+# Models & data
+*.pkl
+*.csv
+
+# IDE
+.vscode/
+.idea/

@@ -1,0 +1,51 @@
+{
+  "surplus_prediction": {
+    "best_model": "GradientBoosting",
+    "R2": 0.849,
+    "RMSE_kg": 3.92,
+    "MAE_kg": 2.92,
+    "MAPE_pct": 12.75,
+    "demand_avg_MAE": 12.56,
+    "demand_avg_R2": 0.3643
+  },
+  "allocation_paps": {
+    "total_food_saved_kg": 3483.1,
+    "total_waste_kg": 0.0,
+    "total_meals_served": 8708.0,
+    "gini_coefficient": 0.6
+  },
+  "fairness_comparison": {
+    "gini_paps": 0.6,
+    "gini_random": 0.7252,
+    "gini_nearest": 0.7632,
+    "gini_demand_only": 0.998,
+    "fairness_improvement_vs_random_pct": 17.27
+  },
+  "routing": {
+    "two_opt_vs_greedy_pct": -14.72,
+    "greedy_mean_dist_km": 4574.82,
+    "two_opt_mean_dist_km": 5248.01,
+    "route_ttest_p": 0.0,
+    "two_opt_wins_pct": 16.0
+  },
+  "clustering": {
+    "optimal_k": 8,
+    "silhouette": 0.2804,
+    "davies_bouldin": 1.0981
+  },
+  "ablation": {
+    "baseline_rmse": 6.0348,
+    "rmse_no_rolling_pct": 13.7,
+    "rmse_no_festival_pct": 15.6,
+    "rmse_no_lag_pct": 1.0
+  },
+  "dataset": {
+    "total_donor_records": 50033,
+    "ngo_profiles": 500,
+    "cities": 14,
+    "date_range": "2020-01-01 to 2024-12-31",
+    "weather_rows": 25578,
+    "osrm_road_distances": 500,
+    "data_source": "Real (Open-Meteo + OSRM + NGO Darpan/GitHub)"
+  }
+}

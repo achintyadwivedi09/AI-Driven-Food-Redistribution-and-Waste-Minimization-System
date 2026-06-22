@@ -1,0 +1,12 @@
+{
+  "part1_weather_rows": 25578,
+  "part2_ngo_profiles": 500,
+  "part3_donor_records": 50033,
+  "part4_distance_pairs": 500,
+  "master_dataset_rows": 50033,
+  "cities_covered": 14,
+  "date_range": "2020-01-01 to 2024-12-31",
+  "null_pct_surplus_kg": 0.0,
+  "pipeline_version": "1.0",
+  "generated_at": "2026-06-21T19:28:08.231389"
+}
