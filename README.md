@@ -487,6 +487,10 @@ git push origin feature/your-amazing-idea
 <a href="https://github.com/achintyadwivedi09">
   <img src="https://img.shields.io/badge/GitHub-achintyadwivedi09-181717?style=for-the-badge&logo=github&logoColor=white"/>
 </a>
+&nbsp;
+<a href="https://www.linkedin.com/in/dwivediachintya">
+  <img src="https://img.shields.io/badge/LinkedIn-dwivediachintya-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white"/>
+</a>
 
 <br/><br/>
 
